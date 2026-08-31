@@ -1,0 +1,24 @@
+# secrets - never commit
+.env
+*.env
+!.env.example
+
+# docker build artifacts / downloaded jars & binaries
+**/*.jar
+**/*.class
+**/build.log
+**/build2.log
+**/cc-build.log
+**/shiro-build.log
+**/shiro-build2.log
+**/wrapper*.log
+**/quicktest.log
+**/*.tar.gz
+**/payload.bin
+**/netpayload.bin
+**/shiro-payload.bin
+**/cookie.txt
+
+# OS junk
+.DS_Store
+Thumbs.db

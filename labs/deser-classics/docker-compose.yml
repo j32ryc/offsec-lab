@@ -1,0 +1,31 @@
+services:
+  attacker:
+    build: ./attacker
+    container_name: deser-attacker
+    hostname: attacker
+    networks: [lab]
+  fastjson-victim:
+    build: ./fastjson-victim
+    container_name: fastjson-victim
+    hostname: fastjson-victim
+    ports:
+      - "18090:8090"
+    networks: [lab]
+    depends_on: [attacker]
+  cc-victim:
+    build: ./cc-victim
+    container_name: cc-victim
+    hostname: cc-victim
+    ports:
+      - "17070:7070"
+    networks: [lab]
+  shiro-victim:
+    build: ./shiro-victim
+    container_name: shiro-victim
+    hostname: shiro-victim
+    ports:
+      - "18100:8100"
+    networks: [lab]
+networks:
+  lab:
+    driver: bridge

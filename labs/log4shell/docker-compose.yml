@@ -1,0 +1,17 @@
+services:
+  attacker:
+    build: ./attacker
+    container_name: log4shell-attacker
+    hostname: attacker
+    networks: [lab]
+  victim:
+    build: ./victim
+    container_name: log4shell-victim
+    hostname: victim
+    ports:
+      - "18080:8080"
+    networks: [lab]
+    depends_on: [attacker]
+networks:
+  lab:
+    driver: bridge
