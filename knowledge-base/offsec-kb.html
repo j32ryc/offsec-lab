@@ -1113,16 +1113,17 @@ const DATA = [
  defend:["把 OSED 涉及的用户态利用开发彻底吃透，是唯一现实的前置路径。","更适合已经决定往漏洞研究方向发展的人，而非通用渗透测试岗位的常规进阶选项。"]},
 
 {id:"cert-others",domain:"认证进阶路线图",title:"业界进阶认证精选",en:"Notable Non-OffSec Certs",sev:"med",kind:"cert",
- summary:"OSCP 之外，业界真正被红队/渗透岗位认可的几张进阶认证，各自补齐 OffSec 体系里比较薄的部分。",
- tags:["红队方向","AD专项","高性价比"],
- intro:"OffSec 自家的进阶路线偏『漏洞挖掘与利用开发』；如果目标是红队方向，或想更聚焦活动目录攻击，下面几张业界认可度高的证书是很好的补充，难度和知识面与本知识库大部分内容衔接得上。",
+ summary:"OSCP 之外，业界真正被红队/渗透/移动安全岗位认可的几张进阶认证，各自补齐 OffSec 体系里比较薄的部分。",
+ tags:["红队方向","AD专项","移动安全","高性价比"],
+ intro:"OffSec 自家的进阶路线偏『漏洞挖掘与利用开发』，且完全不覆盖移动应用方向；如果目标是红队、更聚焦活动目录攻击，或者想往移动安全走，下面几张业界认可度高的证书是很好的补充，难度和知识面与本知识库大部分内容衔接得上。",
  variants:[
    {name:"CRTO (Zero-Point Security)",t:"红队",desc:"红队作战/C2 基础设施与规避技术，内容比 OSCP 更贴近真实红队交付，国际红队岗位认可度很高。"},
    {name:"CRTP / CRTE (Altered Security)",t:"AD专项",desc:"专攻活动目录攻击路径，比本知识库『活动目录』域挖得更深；CRTE 是 CRTP 的进阶版，覆盖跨域信任等场景。"},
    {name:"GXPN (SANS/GIAC)",t:"漏洞利用",desc:"SANS 体系下的高级渗透/漏洞利用认证，价格昂贵但含金量高，常见于甲方安全团队的招聘要求。"},
-   {name:"PNPT / CPTS (TCM / HTB)",t:"高性价比新兴",desc:"分别由 TCM Security 和 HackTheBox 推出的实战型认证，价格远低于 OSCP，内容更新快，近两年在招聘市场认可度上升明显。"}],
- detect:"都建议先有 OSCP 或同等水平基础；选哪个取决于想往红队(CRTO)、AD 专精(CRTP/CRTE)，还是预算有限但要有认证(PNPT/CPTS)的方向发展。",
- defend:["CRTP/CRTE 和本知识库『活动目录』域直接衔接，做完横向移动/Kerberoasting 卡片后是很自然的下一步。","预算有限的话，PNPT/CPTS 是目前性价比最高的『第二张证』选择。"]},
+   {name:"PNPT / CPTS (TCM / HTB)",t:"高性价比新兴",desc:"分别由 TCM Security 和 HackTheBox 推出的实战型认证，价格远低于 OSCP，内容更新快，近两年在招聘市场认可度上升明显。"},
+   {name:"OMSE (8kSec)",t:"移动安全",desc:"专攻 iOS/Android 移动应用与系统层面的漏洞研究，覆盖用户态到内核态、逆向与漏洞利用，是本知识库『移动应用安全』域往深走的对应认证——国际范围内比较小众，但在移动安全圈子里认可度高，弥补了 OffSec 体系完全没有移动方向认证的空白。"}],
+ detect:"都建议先有 OSCP 或同等水平基础；选哪个取决于想往红队(CRTO)、AD 专精(CRTP/CRTE)、移动安全(OMSE)，还是预算有限但要有认证(PNPT/CPTS)的方向发展。",
+ defend:["CRTP/CRTE 和本知识库『活动目录』域直接衔接，做完横向移动/Kerberoasting 卡片后是很自然的下一步。","OMSE 和本知识库『移动应用安全』域衔接，适合吃透 Frida/静态分析这几张卡后往纵深走。","预算有限的话，PNPT/CPTS 是目前性价比最高的『第二张证』选择。"]},
 
 /* ============ 移动应用安全 ============ */
 {id:"mobile-static-analysis",domain:"移动应用安全",title:"移动应用逆向工程基础",en:"Mobile App Reverse Engineering Fundamentals",sev:"info",
@@ -1236,6 +1237,243 @@ const DATA = [
  payloads:[
    {l:"网页授权URL结构(用于分析redirect_uri校验)",c:"https://open.weixin.qq.com/connect/oauth2/authorize?appid=APPID&redirect_uri=REDIRECT&response_type=code&scope=snsapi_userinfo&state=STATE"}],
  defend:["AppSecret/AccessToken 只能存于服务端，AccessToken 建议做中心化缓存管理避免频繁请求触发风控，绝不下发到前端。","网页授权严格校验 redirect_uri 白名单与 state 参数，防止授权劫持。","消息接收接口严格按官方文档实现 Token+签名校验，拒绝未通过校验的请求。","接入第三方代运营平台前评估其安全资质，明确供应链风险边界。"]},
+
+/* ============ 工业控制系统安全 (ICS/OT) ============ */
+{id:"ics-fundamentals",domain:"工业控制系统安全 (ICS/OT)",title:"ICS/OT 基础与 Purdue 模型",en:"ICS/OT Fundamentals & the Purdue Model",sev:"info",
+ summary:"工控网络的世界观和常规IT完全不同——这里的『可用性』压倒一切，一次拼死拼活的扫描可能不是让服务器重启，而是让一条产线停摆甚至引发安全事故。",
+ tags:["Purdue模型","IT/OT融合","可用性优先"],
+ intro:"工业控制系统(ICS)/运营技术(OT)指的是控制物理世界的系统——电网调度、水处理、工厂产线、石油管道，核心设备是PLC(可编程逻辑控制器)、DCS(分布式控制系统)、SCADA(数据采集与监控系统)。传统上OT网络物理隔离于IT网络(『气隙』假设)，但近年IT/OT融合趋势(远程运维、数据上云)让这个假设越来越站不住脚，也让OT安全从『纯物理隔离』变成了真正的网络安全问题。理解Purdue模型(把工控网络分成0-5共6个层级，从现场设备到企业IT网络)是理解攻击路径和防御分区思路的基础。",
+ variants:[
+   {name:"Purdue 模型分层",t:"purdue",desc:"Level 0(现场设备/传感器执行器)→ Level 1(PLC/RTU控制器)→ Level 2(HMI/监控)→ Level 3(生产运维)→ Level 3.5(DMZ)→ Level 4/5(企业IT网络)，攻击者的典型路径是从Level 4/5的企业网一路突破到Level 0/1直接操纵物理设备。"},
+   {name:"可用性优先于机密性",t:"priority-flip",desc:"IT安全的CIA优先级通常是机密性>完整性>可用性，OT世界完全反过来——停机可能意味着生产事故甚至人身安全事故，任何测试动作都要把『会不会打断生产』放在第一位考虑。"},
+   {name:"设备生命周期极长",t:"long-lifecycle",desc:"一台PLC可能在产线上服役十几二十年，操作系统/固件几乎不会像IT设备那样定期更新，大量在役设备运行着早已停止支持的老旧系统，补丁管理在这个世界基本不现实。"}],
+ detect:"评估一个环境是否属于OT范畴：是否存在PLC/RTU/HMI/SCADA这类设备、是否使用Modbus/DNP3/S7comm等工业协议、网络分区是否遵循Purdue模型的分层逻辑。",
+ payloads:[],
+ defend:["网络分区严格遵循Purdue模型，Level 3.5 DMZ是IT/OT之间唯一允许的数据交换点，杜绝IT网络直连Level 0-2。","任何测试/扫描动作在OT环境里必须极度谨慎，优先被动侦察，主动探测前必须和现场工程师确认设备承受能力。","建立资产清单和补丁豁免清单，对无法打补丁的老旧设备用网络层隔离/监控做补偿性控制。"]},
+
+{id:"ics-protocols",domain:"工业控制系统安全 (ICS/OT)",title:"工业协议安全 (Modbus / DNP3 / S7comm)",en:"Industrial Protocol Security",sev:"crit",
+ summary:"这些协议诞生的年代根本没考虑过『网络安全』这回事——没有身份认证、没有加密，谁能连上这个网络，谁就能给PLC下达任意指令。",
+ tags:["Modbus","DNP3","无认证协议"],
+ intro:"Modbus(1979年由施耐德电气发布)、DNP3、西门子的S7comm，是工控领域最常见的几种通信协议。它们设计的年代工业网络默认物理隔离，协议本身普遍没有身份认证、没有加密、甚至没有基本的完整性校验——这意味着只要攻击者能接入这个网络(哪怕只是逻辑接入)，往往不需要利用任何『漏洞』，直接发送协议规定的合法指令就能读写PLC的寄存器、修改运行逻辑，这和『漏洞利用』完全是两种范式。",
+ variants:[
+   {name:"Modbus 无认证读写",t:"modbus",desc:"Modbus/TCP 默认监听502端口，协议本身没有任何认证机制，能连上就能读写线圈(coil)/寄存器(register)，直接修改控制逻辑或篡改传感器读数的显示值。"},
+   {name:"DNP3 协议滥用",t:"dnp3",desc:"电力/水务行业常用协议，同样存在认证薄弱的问题，较新版本引入了可选的安全认证扩展，但很多实际部署出于兼容性考虑并未启用。"},
+   {name:"S7comm 私有协议",t:"s7comm",desc:"西门子S7系列PLC使用的私有协议，历史上认证机制薄弱(如可被重放的简单密码机制)，且协议细节已被逆向工程社区较完整地文档化，衍生出多个开源利用/测试工具。"}],
+ detect:"用 Wireshark 配合对应协议解析插件分析流量，确认协议类型与是否启用了可选的认证/加密扩展；nmap 的工控协议探测脚本(如 modbus-discover)可用于资产识别，但务必先评估目标设备的扫描承受能力。",
+ payloads:[
+   {l:"Modbus 读取保持寄存器(概念，使用pymodbus)",c:"from pymodbus.client import ModbusTcpClient\nclient = ModbusTcpClient('10.0.0.5')\nclient.connect()\nresult = client.read_holding_registers(0, 10)   <span class=cmt># 无需任何认证</span>"}],
+ defend:["在协议层面无法直接加固时(老旧设备不支持)，用网络层隔离+白名单访问控制作为主要防线。","部署工控协议感知的入侵检测系统(IDS)，监控异常的写操作指令。","新建/改造项目优先选用带认证/加密扩展的协议版本，并确保实际启用而非仅仅『协议支持』。"]},
+
+{id:"ics-plc-hmi",domain:"工业控制系统安全 (ICS/OT)",title:"PLC / HMI 攻击面",en:"PLC & HMI Attack Surface",sev:"crit",
+ summary:"PLC 是真正『指挥物理世界』的那个大脑，HMI 是操作员看到的那块屏幕——控制住前者能直接操纵设备，篡改后者能让操作员『眼睁睁看着一切正常』却浑然不知系统已经失控。",
+ tags:["梯形逻辑","HMI篡改","固件安全"],
+ intro:"PLC(可编程逻辑控制器)运行着直接控制阀门、电机、传感器的逻辑程序(常用梯形图/Ladder Logic编写)；HMI(人机界面)是操作员监控和干预产线状态的操作台，本质上把PLC/SCADA收集的数据可视化呈现。这两类设备是ICS环境里最直接的攻击目标：控制了PLC就等于控制了物理设备本身，而篡改HMI的显示逻辑能让操作员对真实状态一无所知——这正是2015年乌克兰电网攻击(Industroyer)里被使用的手法之一。",
+ variants:[
+   {name:"PLC 逻辑篡改",t:"logic-tampering",desc:"通过厂商专用工程软件或直接构造协议指令，上传恶意的梯形逻辑程序，改变PLC对物理设备的控制行为——这正是Stuxnet攻击伊朗离心机的核心手法。"},
+   {name:"PLC 固件层面攻击",t:"firmware",desc:"部分老旧PLC固件本身存在可被利用的漏洞(缓冲区溢出、认证绕过)，成功利用可获得对控制器更底层的持久化访问。"},
+   {name:"HMI 显示层篡改/欺骗",t:"hmi-spoofing",desc:"攻击者不需要改变物理过程本身，只需要让HMI显示的数值/状态和真实情况不符，就能让操作员做出错误决策，或掩盖攻击行为不被及时发现。"},
+   {name:"工程师站(Engineering Workstation)沦陷",t:"engineering-station",desc:"工程师站是唯一被信任、能直接给PLC下发新程序的机器，一旦这台机器被攻陷(常通过传统IT手法如钓鱼)，攻击者就获得了合法身份下发恶意逻辑的能力，是很多真实ICS攻击链的关键跳板。"}],
+ detect:"资产测绘确认环境内PLC/HMI的型号与固件版本，比对已知CVE；重点审查工程师站的接入方式与安全加固程度，这往往是IT到OT之间最薄弱的一环。",
+ payloads:[],
+ defend:["工程师站严格隔离，不允许日常办公/上网，最小化其被传统IT攻击手法攻陷的概率。","PLC逻辑变更走审批+版本控制流程，部署变更检测告警。","关键HMI显示数据与底层传感器原始数据做交叉校验机制，降低纯显示层欺骗的隐蔽性。"]},
+
+{id:"ics-safe-recon",domain:"工业控制系统安全 (ICS/OT)",title:"OT 环境安全测试方法论",en:"Safe Assessment Methodology for OT Environments",sev:"high",
+ summary:"在IT网络里司空见惯的一次全端口扫描，丢到一台运行了15年、从没重启过的老PLC上，可能直接把它打崩——OT测试的第一条军规是『先别把产线搞停了』。",
+ tags:["被动侦察","安全测试窗口","IT/OT协作"],
+ intro:"传统IT渗透测试的『扫得越狠越好』思路在OT环境里是危险的——很多工控设备的网络协议栈是极简实现，从未被设计为承受高强度扫描或畸形数据包，实战中确实发生过安全测试直接打崩产线设备的事故。OT安全测试因此发展出一套完全不同的方法论，核心原则是把『不影响生产可用性』放在第一优先级，主动性测试手段的使用要远比IT渗透克制得多。",
+ variants:[
+   {name:"被动流量分析优先",t:"passive-first",desc:"尽可能通过镜像流量端口(SPAN/TAP)被动监听网络通信来做资产识别和攻击面分析，而不是主动扫描——被动方式对目标设备零负载。"},
+   {name:"变更窗口内测试",t:"maintenance-window",desc:"必须做主动测试时，安排在计划检修/停产窗口内进行，并且要有现场工程师随时待命，一旦设备出现异常能立刻物理介入。"},
+   {name:"测试环境镜像验证",t:"digital-twin",desc:"有条件的话先在和生产环境同型号的测试台/数字孪生环境里验证测试手段的安全性，确认不会导致设备异常后才考虑在生产环境小心谨慎地复现。"},
+   {name:"IT安全团队+OT工程师协作",t:"cross-team",desc:"纯IT背景的安全测试人员很容易低估某个动作对物理过程的实际影响，OT测试必须由熟悉具体工艺流程的现场工程师全程陪同把关。"}],
+ detect:"评估阶段先问清楚：这是纯远程测试还是有物理访问？设备是否有冗余/热备？运维方是否明确了『不可触碰』名单？——这些问题的答案决定了后续能用多激进的测试手段，而不是像IT渗透那样默认『先扫了再说』。",
+ payloads:[],
+ defend:["制定专门的OT安全测试授权与操作规范，明确区分于常规IT渗透测试流程。","任何OT测试前完成设备清单与『高风险不可测试设备』名单确认。","建立OT环境专用的应急响应预案，测试期间与运维团队保持实时沟通渠道。"]},
+
+{id:"ics-case-stuxnet-industroyer",domain:"工业控制系统安全 (ICS/OT)",title:"经典 ICS 攻击案例：Stuxnet & Industroyer",en:"Landmark ICS Attacks: Stuxnet & Industroyer",sev:"crit",
+ summary:"一个是史上第一个专门为摧毁物理设备而生的国家级网络武器，一个是第一个真正让电网批量断电的恶意软件——两次事件共同宣告了『网络攻击只能偷数据』的时代已经结束。",
+ tags:["Stuxnet","Industroyer","国家级APT"],
+ intro:"Stuxnet(2010年披露)和Industroyer(又名CrashOverride，2016年披露)是ICS安全历史上两个分水岭事件。Stuxnet专门针对伊朗纳坦兹铀浓缩设施的离心机，通过篡改PLC控制逻辑让离心机在物理极限转速附近运行、同时向操作员显示一切正常的HMI数据，最终造成大量离心机物理损毁——这是已知第一个明确以摧毁物理设备为目标而设计的恶意软件。Industroyer则直接针对乌克兰电网的断路器控制逻辑，造成了大范围断电，是已知第一个专门设计用来直接操纵电网设备造成停电的恶意软件框架。",
+ variants:[
+   {name:"Stuxnet：气隙穿透+精准物理破坏",t:"stuxnet",desc:"通过感染U盘等移动介质穿透物理隔离网络(证明『气隙』不是绝对安全边界)，利用多个Windows 0day传播，最终目标极其精确——只对特定型号PLC和特定的离心机转速控制逻辑生效，对其他系统几乎没有破坏行为，体现了国家级行动对『精准打击、避免暴露』的极致要求。"},
+   {name:"Industroyer：协议原生指令攻击",t:"industroyer",desc:"直接使用变电站通信协议(如IEC 60870-5-101/104)的原生合法指令操纵断路器开合，不依赖任何软件漏洞——再次印证了ICS世界『协议本身没有认证』这个根本性问题，光靠『打补丁』防不住这类攻击。"},
+   {name:"共同启示",t:"lessons",desc:"两起事件都表明，攻击者一旦拿到了向PLC/断路器下发指令的能力，物理世界的破坏就和这条指令是否『合法』无关——防御重点必须前移到『谁能拿到这个下发指令的能力』，而不是寄望于协议或设备本身能分辨指令的好坏。"}],
+ detect:"这两起事件的检测都极其依赖对『正常操作基线』的深刻理解——脱离具体工艺流程语境，单纯看网络流量很难分辨一条Modbus写指令是正常运维还是恶意篡改，这也是为什么OT安全极度依赖工艺专家而非纯IT背景的分析师。",
+ payloads:[],
+ defend:["工程师站/操作站的访问控制与变更审计是阻断这类攻击链的关键前置环节。","部署理解具体工艺逻辑的异常检测(而非单纯的网络层IDS)，才能识别『指令合法但不该在这个时候发生』的攻击模式。","建立物理层面的安全联锁(safety interlock)，即使控制系统被攻陷，关键安全阈值依然由独立于主控制回路的机制强制保护。"]},
+
+/* ============ 云安全 (AWS/Azure/GCP) ============ */
+{id:"cloud-iam-privesc",domain:"云安全 (AWS/Azure/GCP)",title:"云 IAM 权限提升",en:"Cloud IAM Privilege Escalation",sev:"crit",
+ summary:"云上没有『本地提权』这回事，取而代之的是一整套权限策略的组合游戏——搞懂哪些权限组合能让你间接拿到更高权限，是云安全里等价于Windows/Linux提权的核心技能。",
+ tags:["AWS IAM","权限组合","PassRole滥用"],
+ intro:"传统主机提权靠SUID/内核漏洞/服务配置错误，云环境的『提权』本质完全不同：云资源的一切权限都由IAM(身份与访问管理)策略定义，很多单独看起来『安全』的权限，组合起来却能让一个低权限身份间接获得管理员级别的能力。这类『权限组合链』攻击不依赖任何软件漏洞，纯粹是策略设计失误，因此哪怕云平台底层再安全，配置不当依然能让整个账户沦陷。PEN-200 目前已经把 AWS 云环境的枚举与攻击纳入了正式课程内容。",
+ variants:[
+   {name:"iam:PassRole 滥用",t:"passrole",desc:"AWS中，如果一个身份既能创建/修改某类计算资源(如Lambda函数、EC2实例)，又拥有iam:PassRole权限把一个高权限角色『传递』给这个资源，就能通过这个资源间接以高权限角色的身份执行代码——是AWS环境里最经典的一条提权链。"},
+   {name:"策略修改类权限",t:"policy-modify",desc:"拥有iam:CreatePolicyVersion、iam:AttachUserPolicy等『修改权限本身』的权限，等于拥有了给自己加任意权限的能力，这类权限的授予需要极其谨慎。"},
+   {name:"跨服务信任链",t:"cross-service-trust",desc:"云环境里服务与服务之间常通过角色互相信任(如CI/CD流水线能扮演部署角色)，找到信任链上权限配置最松的那个节点，往往就能一路提权到链条终点的高权限身份。"}],
+ detect:"用工具批量枚举当前身份实际拥有的权限组合，比对已知的提权路径清单(而不是逐条策略人工审查)，是云环境权限审计的标准做法——权限提升链条往往由多个『看起来无害』的权限拼接而成，人工审查很容易漏判。",
+ payloads:[
+   {l:"PassRole提权链概念",c:"<span class=cmt># 前提：当前身份有 iam:PassRole + lambda:CreateFunction 权限</span>\naws lambda create-function --function-name pwn \\\n  --role arn:aws:iam::ACCOUNT:role/HighPrivRole \\\n  --handler index.handler --runtime python3.12 --zip-file fileb://payload.zip\n<span class=cmt># 函数以 HighPrivRole 身份运行，间接获得该角色权限</span>"}],
+ defend:["遵循最小权限原则，定期用自动化工具审计实际生效的权限组合而非只看单条策略。","对iam:PassRole这类『权限传递』类权限的授予格外谨慎，尽量限定可传递的具体角色范围(而非通配符)。","关键操作开启CloudTrail等审计日志，监控异常的角色扮演(AssumeRole)行为。"]},
+
+{id:"cloud-storage-exposure",domain:"云安全 (AWS/Azure/GCP)",title:"云存储桶暴露",en:"Cloud Storage Bucket Exposure",sev:"high",
+ summary:"一个访问权限设置错误的S3桶，可能就是一整个公司客户数据库的公开下载入口——这是过去十年里数据泄露事件里出现频率最高的单一原因之一。",
+ tags:["S3","公开访问","对象存储"],
+ intro:"AWS S3、Azure Blob Storage、GCP Cloud Storage是云上最常用的对象存储服务，默认设计上是可以配置为公开可读/可写的(用于托管静态网站等合法场景)，但大量事故源于开发者图方便把本该私有的存储桶设成了公开访问，或者权限策略配置逻辑错误导致『预期私有』实际公开。因为存储桶名称往往有规律可猜(公司名/项目名相关)，这类暴露经常被自动化扫描工具批量发现。",
+ variants:[
+   {name:"公开可列出+可读",t:"public-read",desc:"存储桶被设为公开可读，任何人访问对应URL就能列出并下载全部对象——如果桶里存的是数据库备份、日志、用户上传文件，等于直接泄露。"},
+   {name:"公开可写",t:"public-write",desc:"更严重的配置错误：任何人能上传/覆盖对象，可用来植入恶意文件，如果该存储桶内容会被应用信任加载(如托管的JS脚本)，能升级为对该应用所有访问者的供应链攻击。"},
+   {name:"存储桶名称猜测",t:"bucket-enum",desc:"存储桶名称在各云平台内通常需要全局唯一，开发者常用『公司名-用途』这类可预测的命名规则，攻击者用字典枚举常见命名模式批量探测暴露的桶。"}],
+ detect:"用云平台官方CLI或专门工具(如S3Scanner)对疑似存储桶名称做批量探测，也可结合子域名/证书透明日志里出现的存储桶相关域名线索定向核实。",
+ payloads:[
+   {l:"探测S3桶是否公开可读(AWS CLI，无需凭据)",c:"aws s3 ls s3://target-bucket-name --no-sign-request"}],
+ defend:["默认拒绝公开访问(AWS的S3 Block Public Access是账户级开关，建议默认全部开启)，需要公开访问的桶按最小范围单独放行。","定期用云平台原生的配置审计工具(如AWS Config、Security Hub)扫描存储桶权限配置漂移。","敏感数据存储桶启用访问日志，监控异常的批量下载行为。"]},
+
+{id:"cloud-metadata-credential-theft",domain:"云安全 (AWS/Azure/GCP)",title:"云元数据服务凭据窃取",en:"Cloud Metadata Service Credential Theft",sev:"crit",
+ summary:"云主机内部有一个所有实例都能访问的『内部服务』，专门用来发放这台机器当前身份的临时密钥——SSRF漏洞遇上这个服务，等于直接白送一把通往整个云账户的钥匙。",
+ tags:["IMDS","169.254.169.254","SSRF→云凭据"],
+ intro:"云主机(EC2/虚拟机/容器)通常通过一个特殊的链路本地地址(AWS/Azure/GCP都用169.254.169.254)提供实例元数据服务(IMDS)，应用可以借此获取实例信息，更关键的是——获取当前实例所绑定IAM角色的临时访问凭据。这个设计本身是合理的(避免把长期密钥硬编码进代码)，但如果应用存在SSRF漏洞，攻击者能借服务器身份向这个内部地址发起请求，直接窃取到这组临时凭据，进而以该实例的云权限操作整个账户——这是本知识库『SSRF』卡片里云元数据变种的完整展开。",
+ variants:[
+   {name:"IMDSv1 无额外防护",t:"imdsv1",desc:"AWS的第一代元数据服务只需要发一个简单的HTTP GET请求即可获取凭据，没有任何额外校验，是SSRF升级为云账户接管最常见的路径。"},
+   {name:"IMDSv2 会话令牌机制",t:"imdsv2",desc:"AWS后来推出的加固版本要求先用PUT请求换取一个会话令牌才能查询元数据，能有效防御大多数经典SSRF(因为很多SSRF场景下攻击者只能控制请求的URL/方法为GET，构造不出PUT请求)，但配置错误(实例仍允许IMDSv1回退)依然可绕过。"},
+   {name:"容器环境的元数据继承风险",t:"container-inheritance",desc:"运行在EC2实例上的容器如果网络配置不当，可能直接继承宿主机的IMDS访问能力，即使容器本身权限模型设计得很谨慎，也可能被这条路径间接拿到宿主机级别的云凭据。"}],
+ detect:"审计应用内所有会根据用户输入发起请求的功能点(URL预览、文件抓取、Webhook等)是否可被引导访问169.254.169.254；检查实例元数据服务配置是否强制要求IMDSv2(禁用v1回退)。",
+ payloads:[
+   {l:"SSRF窃取AWS临时凭据(IMDSv1)",c:"url=http://169.254.169.254/latest/meta-data/iam/security-credentials/\n<span class=cmt># 先列出角色名，再用角色名查询对应凭据</span>\nurl=http://169.254.169.254/latest/meta-data/iam/security-credentials/&lt;role-name&gt;"}],
+ defend:["<b>强制启用IMDSv2并禁用v1</b>，从根本上大幅提高SSRF升级为凭据窃取的门槛。","实例绑定的IAM角色遵循最小权限，即使凭据被窃取，损失范围也可控。","应用层面严格校验用户可控的URL目标，拒绝指向链路本地/内网地址段的请求，作为纵深防御的第一层。"]},
+
+{id:"cloud-serverless",domain:"云安全 (AWS/Azure/GCP)",title:"Serverless / 函数计算安全",en:"Serverless & Function-as-a-Service Security",sev:"high",
+ summary:"不用管服务器了，不代表不用管权限了——很多函数计算的执行角色权限给得比函数实际需要的宽松得多，一个函数逻辑漏洞就可能被放大成整个账户的权限滥用。",
+ tags:["Lambda","事件注入","过度授权"],
+ intro:"Serverless(如AWS Lambda、Azure Functions、GCP Cloud Functions)让开发者不用管理底层服务器，只需关注函数代码本身，但安全责任并没有消失，只是转移了形态：函数的执行角色权限、触发函数的事件源是否可信、函数间的调用链，都是新的攻击面。一个常见误区是开发者为了省事，给函数执行角色赋予远超实际业务需要的宽泛权限，一旦函数代码本身存在可被利用的逻辑漏洞，损失就会被这个过度授权的角色放大。",
+ variants:[
+   {name:"过度授权的执行角色",t:"over-privileged-role",desc:"函数执行角色被赋予了整个账户级别的宽泛权限(如s3:*而非仅限该函数实际用到的specific桶)，函数代码里的任何漏洞(如未过滤的路径参数)都可能被放大利用到角色权限允许的全部范围。"},
+   {name:"事件源注入",t:"event-injection",desc:"函数常由API网关、消息队列、对象存储事件等触发，如果函数信任事件数据的完整字段而不做校验，攻击者能通过精心构造触发事件(如上传一个特殊命名的文件触发存储事件)间接控制函数执行逻辑。"},
+   {name:"依赖库供应链风险",t:"dependency-risk",desc:"函数打包时引入的第三方依赖库如果存在已知漏洞或被投毒，风险和常规应用一样存在，但函数计算场景下更新/审计这些依赖往往被忽视。"}],
+ detect:"审计每个函数的执行角色权限是否严格对应其实际业务功能；审查函数入口对事件数据的信任程度，是否对来自事件源的字段做了充分校验而非直接使用。",
+ payloads:[],
+ defend:["每个函数配置独立的、按最小权限原则收窄的执行角色，杜绝多个函数共用一个宽泛角色。","函数入口对所有事件数据按『不可信输入』对待，严格校验后再使用。","函数依赖库纳入常规供应链安全扫描流程，不因为是『无服务器』就降低标准。"]},
+
+{id:"cloud-lateral-persistence",domain:"云安全 (AWS/Azure/GCP)",title:"云环境横向移动与持久化",en:"Cloud Lateral Movement & Persistence",sev:"high",
+ summary:"拿下一个云账户里的一个身份只是开始——云原生的『横向移动』走的是账户信任关系和服务间调用链，而不是传统的内网IP段。",
+ tags:["跨账户信任","IAM后门","云原生C2"],
+ intro:"传统内网横向移动靠的是网络可达性(能不能ping通、有没有开放端口)，云环境的横向移动更多靠的是身份和信任关系——跨账户角色信任(Cross-Account Role)、组织(Organization)内的服务控制策略、服务间的默认调用权限，都是云原生场景下的『内网』。同样，云环境里的持久化也和传统的计划任务/服务不同，攻击者更倾向于在IAM层面埋后门，因为这类后门往往比主机层面的持久化更隐蔽、更难被常规EDR发现。",
+ variants:[
+   {name:"跨账户角色滥用",t:"cross-account",desc:"企业出于运维便利常配置跨账户角色信任关系(如安全团队账户能扮演业务账户里的审计角色)，攻击者一旦拿下信任链的起点账户，可能借助这些信任关系跳到本该完全隔离的其他账户。"},
+   {name:"IAM 后门",t:"iam-backdoor",desc:"创建一个不起眼的新IAM用户/角色，或者给现有身份偷偷附加一条额外的信任策略，让攻击者能在不依赖任何主机层面立足点的情况下随时重新获得访问——即使运维团队重置了最初被攻陷的凭据，这类后门依然有效。"},
+   {name:"云原生服务间横向",t:"service-to-service",desc:"利用服务间默认信任(如同一VPC内的服务默认互通、CI/CD流水线对多个环境都有部署权限)作为横向路径，而非依赖传统的网络扫描发现新目标。"}],
+ detect:"用BloodHound式的图分析思路(部分开源工具已支持云IAM关系图，如AWS版的PMapper/CloudMapper)梳理身份与权限的完整信任图谱，找出意外存在的高危路径；持续监控IAM策略/信任关系的变更事件。",
+ payloads:[],
+ defend:["跨账户信任关系遵循最小必要原则，定期审计并清理不再需要的信任配置。","对IAM策略/用户/角色的创建与修改开启强制告警，任何非预期变更第一时间发现。","采用『一切访问都应该是临时的』思路(短期凭据+定期轮换)，压缩后门的实际有效窗口。"]},
+
+{id:"cloud-assessment-tooling",domain:"云安全 (AWS/Azure/GCP)",title:"云安全评估方法论与工具",en:"Cloud Security Assessment Methodology & Tooling",sev:"med",
+ summary:"云环境的资产和权限关系复杂到不可能靠人工一条条审查，专门的开源评估工具能把『这个账户到底哪里配置错了』这个问题自动化地摊开给你看。",
+ tags:["ScoutSuite","Prowler","Pacu"],
+ intro:"面对一个云账户动辄成百上千条IAM策略、几十种资源类型的复杂配置，人工逐条审计既不现实也容易漏判。社区维护了一批专门的开源云安全评估工具，分别覆盖『配置审计』和『渗透利用』两类不同场景，是云安全评估工作流里的标准武器库。",
+ variants:[
+   {name:"配置审计类：ScoutSuite / Prowler",t:"config-audit",desc:"自动化拉取账户内几乎所有资源的配置，比对安全基线(如CIS Benchmark)，生成可读性很强的报告，直接标出『这条S3策略配置错了』『这个安全组开放过宽』这类具体问题，是云安全评估的第一步。"},
+   {name:"渗透利用类：Pacu",t:"exploitation",desc:"AWS专用的渗透测试框架，在已获得某个身份的初始凭据后，自动化枚举可能的权限提升路径、横向移动路径，模拟真实攻击者拿到一组凭据后能走多远。"},
+   {name:"资产测绘与关系图",t:"asset-graphing",desc:"CloudMapper等工具能把复杂的网络拓扑与IAM信任关系可视化成图，帮助评估人员直观理解『从这个身份出发，理论上能到达哪些资源』。"}],
+ detect:"标准评估流程：先用ScoutSuite/Prowler类工具做一轮配置基线扫描定位明显的错误配置，再针对已获得的具体身份用Pacu验证实际可利用的权限提升/横向路径，两类工具互补而非替代关系。",
+ payloads:[
+   {l:"ScoutSuite跑一轮AWS账户基线审计",c:"scout aws --profile target-profile   <span class=cmt># 生成HTML报告，按严重程度分类列出问题</span>"}],
+ defend:["把这些评估工具纳入常态化的云安全审计流程(而不是只在渗透测试时用一次)，理想情况下接入CI/CD做持续配置检查。","评估报告优先处理『公开暴露』和『权限提升路径』两类高危发现，这两类问题的实际被利用门槛最低。"]},
+
+/* ============ 容器与编排安全 ============ */
+{id:"container-docker-escape",domain:"容器与编排安全",title:"Docker 容器逃逸基础",en:"Docker Container Escape Fundamentals",sev:"crit",
+ summary:"容器不是虚拟机——它和宿主机共享同一个内核，配置稍有不慎，攻击者从『容器里的一个进程』直接变成『宿主机上的root』，只是几个命令的事。",
+ tags:["特权容器","docker.sock","Capabilities"],
+ intro:"容器的隔离靠的是Linux内核的命名空间(namespace)和控制组(cgroup)机制，本质上容器内进程和宿主机进程共享同一个内核——这和虚拟机基于硬件虚拟化的强隔离完全不同。如果容器运行配置不当(特权模式、挂载了危险的宿主机资源)，这层本就不算绝对的隔离边界很容易被击穿，攻击者能从容器内部直接拿到宿主机权限。本知识库自己的6个实验室全部基于Docker搭建，理解容器安全边界是运维这些实验室、也是评估任何容器化环境的必备知识。",
+ variants:[
+   {name:"特权容器 (--privileged)",t:"privileged",desc:"以--privileged启动的容器几乎拥有宿主机内核的完整能力，容器内可以直接挂载宿主机磁盘设备、加载内核模块，逃逸几乎是必然的，这个选项只应该在完全信任容器内容的场景下使用。"},
+   {name:"docker.sock 挂载暴露",t:"docker-sock",desc:"如果容器内挂载了宿主机的/var/run/docker.sock(常见于CI/CD场景为了让容器内能操作Docker本身)，容器内进程能直接调用Docker API创建一个新的、挂载了整个宿主机文件系统的特权容器，等价于直接拿到宿主机root。"},
+   {name:"危险 Capabilities 授予",t:"capabilities",desc:"Linux Capabilities机制把root的完整权限拆分成了细粒度的单项能力，容器可以按需授予，但如果授予了SYS_ADMIN、SYS_PTRACE这类高危能力，同样可能被用来突破隔离边界。"},
+   {name:"共享宿主机命名空间",t:"shared-namespace",desc:"以--pid=host、--net=host等参数运行的容器，直接共享宿主机的进程/网络命名空间，能看到并可能操作宿主机上的其他进程，隔离边界名存实亡。"}],
+ detect:"检查容器启动配置(docker inspect)是否使用了--privileged、危险的Capabilities授予、或挂载了敏感的宿主机路径(尤其是docker.sock)；容器内可通过检查/proc/self/status里的CapEff字段确认实际生效的capabilities。",
+ payloads:[
+   {l:"通过挂载的docker.sock逃逸(概念)",c:"<span class=cmt># 容器内如果能访问 /var/run/docker.sock：</span>\ndocker -H unix:///var/run/docker.sock run -v /:/host -it alpine chroot /host sh\n<span class=cmt># 新建一个挂载了整个宿主机根目录的容器，等于拿到宿主机shell</span>"}],
+ defend:["生产环境禁止使用--privileged，按最小必要原则单独授予具体需要的Capabilities。","绝不把docker.sock挂载进业务容器，CI/CD场景改用更安全的替代方案(如rootless构建、专用构建服务)。","容器运行时启用用户命名空间隔离(user namespace remapping)，即使容器内是root，映射到宿主机也是非特权用户。"]},
+
+{id:"container-k8s-rbac",domain:"容器与编排安全",title:"Kubernetes 集群安全基础",en:"Kubernetes Cluster Security Fundamentals",sev:"crit",
+ summary:"Kubernetes 把成百上千个容器编排在一起管理，一旦集群层面的权限控制(RBAC)或API Server暴露面出了问题，波及的就不是一个容器，而是整个集群里所有工作负载。",
+ tags:["RBAC","ServiceAccount","kubelet"],
+ intro:"Kubernetes(K8s)是目前最主流的容器编排平台，安全模型比单个Docker容器复杂得多：API Server是整个集群的控制入口，RBAC(基于角色的访问控制)决定谁能对哪些资源做什么操作，每个Pod默认会被自动挂载一个ServiceAccount令牌用于和API Server通信。这套体系任何一环配置过松，都可能让攻击者从『控制了一个Pod』升级为『控制了整个集群』。",
+ variants:[
+   {name:"RBAC 过度授权",t:"rbac-overprivileged",desc:"给ServiceAccount或用户绑定了过于宽泛的ClusterRole(如cluster-admin)，一旦对应的Pod被攻陷，攻击者直接获得操作整个集群的能力——和云IAM过度授权是同一类问题在K8s世界的具体体现。"},
+   {name:"ServiceAccount 令牌滥用",t:"sa-token-abuse",desc:"Pod内默认挂载的ServiceAccount令牌(/var/run/secrets/kubernetes.io/serviceaccount/token)如果对应权限过宽，攻陷该Pod的攻击者能直接用这个令牌调用K8s API做远超该应用本身需要的操作。"},
+   {name:"kubelet API 未授权访问",t:"kubelet-api",desc:"每个节点上的kubelet组件对外暴露API(默认10250端口)，如果认证配置不当，可能被未授权访问，直接在该节点上执行任意容器命令。"},
+   {name:"Pod 逃逸到节点",t:"pod-to-node",desc:"和Docker层面的容器逃逸原理相通，K8s场景下Pod安全上下文(SecurityContext)配置不当(允许特权模式、hostPath挂载)同样可能导致从Pod逃逸到所在节点，进而威胁整个节点乃至集群。"}],
+ detect:"用kubectl auth can-i --list审查当前身份实际拥有的权限；用专门的K8s安全审计工具(如kube-bench按CIS Benchmark检查、kube-hunter主动探测集群暴露面)做系统性排查。",
+ payloads:[
+   {l:"审查当前身份权限",c:"kubectl auth can-i --list\nkubectl auth can-i create pods --as=system:serviceaccount:default:some-sa"},
+   {l:"未授权kubelet API探测",c:"curl -sk https://NODE_IP:10250/pods   <span class=cmt># 未授权情况下可直接列出节点上所有Pod</span>"}],
+ defend:["RBAC遵循最小权限，避免大范围绑定cluster-admin，按命名空间/具体资源类型精细授权。","不需要访问API Server的Pod显式关闭ServiceAccount令牌自动挂载(automountServiceAccountToken: false)。","Pod SecurityContext禁用特权模式与危险的hostPath挂载，启用Pod Security Standards强制基线。","kubelet API启用认证/授权，不对外暴露不必要的节点端口。"]},
+
+{id:"container-image-supplychain",domain:"容器与编排安全",title:"容器镜像安全与供应链",en:"Container Image Security & Supply Chain",sev:"high",
+ summary:"从公共仓库拉一个来源不明的基础镜像直接用于生产，和从网上下载一个不明来源的可执行文件直接运行，本质上是同一种风险——只是包装成了『方便快捷』的样子。",
+ tags:["镜像扫描","基础镜像来源","镜像签名"],
+ intro:"容器镜像本质是一层层打包好的文件系统快照，构建时通常基于某个公共基础镜像(如Docker Hub上的官方或社区镜像)再叠加自己的应用代码。这个链条上的每一环都是潜在的供应链风险点：基础镜像本身可能携带已知漏洞的旧版本软件包，镜像仓库可能被投毒，构建过程可能不慎把密钥打进了镜像层——这和本知识库『经典漏洞案例』里SolarWinds/XZ Utils这类供应链攻击是同一类风险在容器场景下的具体化。",
+ variants:[
+   {name:"基础镜像携带已知漏洞",t:"vulnerable-base",desc:"直接使用未定期更新的基础镜像，即使自己的应用代码毫无问题，镜像里打包的系统库/依赖包可能存在大量已被公开的CVE，构成现成的攻击面。"},
+   {name:"镜像层里的密钥残留",t:"secret-in-layers",desc:"构建过程中临时写入镜像又『删除』的密钥文件，实际上依然完整保留在Docker镜像的历史层里(镜像层是增量快照，删除文件不等于从历史层清除)，任何能拉取该镜像的人都能翻出这些残留密钥。"},
+   {name:"公共仓库投毒",t:"registry-poisoning",desc:"攻击者上传伪装成热门镜像的恶意镜像(如仿冒官方镜像的相似名称)，或攻陷合法维护者的账号在正版镜像里植入后门，用户拉取时毫不知情地引入恶意代码。"}],
+ detect:"用镜像扫描工具(如Trivy、Grype)对构建产物做漏洞扫描，纳入CI/CD流程强制门禁；检查Dockerfile历史与镜像层，确认是否存在残留的密钥类文件。",
+ payloads:[
+   {l:"用Trivy扫描镜像漏洞",c:"trivy image target-image:latest   <span class=cmt># 输出镜像内所有已知CVE，按严重程度排序</span>"}],
+ defend:["基础镜像使用官方/可信来源，并建立定期重新构建机制以纳入上游安全更新，而非一次构建长期不变。","镜像扫描接入CI/CD作为强制门禁，高危漏洞的镜像禁止发布。","构建产物启用镜像签名验证(如Sigstore/cosign)，部署时校验签名确保镜像未被篡改，密钥类内容通过构建期密钥管理机制注入而非写入镜像层。"]},
+
+/* ============ 无线网络安全 ============ */
+{id:"wireless-wifi-attacks",domain:"无线网络安全",title:"WiFi 加密协议攻击",en:"WiFi Encryption Protocol Attacks",sev:"high",
+ summary:"抓一个四次握手包，扔给字典跑一晚上——WPA2破解的门槛低到只要密码不够强，谁都能试试；WPS的PIN码设计缺陷更是直接把『需要暴力破解』降级成了『一定能破解』。",
+ tags:["WPA2/WPA3","四次握手","WPS PIN"],
+ intro:"WiFi的安全性建立在WPA2/WPA3这类加密协议上，但协议设计和实际部署中都存在一些经典弱点：WPA2的四次握手(4-way handshake)可以被动/主动捕获后离线暴力破解预共享密钥；早期为了方便用户配对设计的WPS(WiFi Protected Setup)PIN码机制存在数学上的设计缺陷，能把原本天文数字级的暴力破解空间压缩到实际可行的范围。WPA3引入了更强的密钥交换机制(SAE)缓解了不少经典问题，但迁移尚未普及，大量环境依然在用WPA2甚至更弱的配置。",
+ variants:[
+   {name:"WPA2 四次握手离线破解",t:"handshake-crack",desc:"捕获客户端与AP之间的四次握手包(可通过监听，或主动发送解除认证帧强制客户端重连来加速捕获)，离线用字典/规则对预共享密钥进行暴力破解，破解成功率完全取决于密码强度。"},
+   {name:"WPS PIN 暴力破解",t:"wps-pin",desc:"WPS的8位PIN码由于协议设计缺陷，后4位中有效信息量很小且前后两段可被分别验证，实际暴力破解空间远小于表面上的一亿种组合，很多路由器又没有做好尝试次数限制，是WiFi破解里最『性价比高』的一类弱点。"},
+   {name:"KRACK 密钥重装攻击(概念)",t:"krack",desc:"2017年披露的WPA2协议层设计缺陷，通过操纵四次握手的重传机制诱导重复使用密钥流，理论上可解密部分流量——各厂商已发布补丁修复，但反映出协议本身的握手机制并非无懈可击。"}],
+ detect:"用aircrack-ng套件监听目标网络流量，捕获握手包或检测WPS是否开启；渗透测试授权范围内可主动发送解除认证帧加速握手捕获，未授权环境下严禁此类主动干扰操作。",
+ payloads:[
+   {l:"捕获握手包(概念)",c:"airmon-ng start wlan0\nairodump-ng -c &lt;channel&gt; --bssid &lt;target-bssid&gt; -w capture wlan0mon\naireplay-ng --deauth 5 -a &lt;target-bssid&gt; wlan0mon   <span class=cmt># 加速握手捕获，需明确授权</span>"},
+   {l:"离线破解握手包",c:"aircrack-ng capture-01.cap -w rockyou.txt"}],
+ defend:["预共享密钥使用足够长度和随机性的强密码，从根本上抵御离线暴力破解。","关闭WPS功能，或至少确保路由器固件已修复PIN码相关设计缺陷并启用尝试次数限制。","有条件的环境优先升级到WPA3，企业环境优先采用802.1X等更强的认证框架而非简单的预共享密钥模式。"]},
+
+{id:"wireless-evil-twin",domain:"无线网络安全",title:"Evil Twin 钓鱼热点",en:"Evil Twin / Rogue Access Point",sev:"high",
+ summary:"设备连WiFi时，对『哪个才是真的官方WiFi』这件事基本没有身份验证意识——只要信号够强、名字一样，用户的设备甚至可能自动帮你连上一个假的。",
+ tags:["Rogue AP","Captive Portal钓鱼","自动重连滥用"],
+ intro:"Evil Twin(邪恶双胞胎)攻击的核心思路是搭建一个和目标WiFi同名(有时还伪造同样的MAC地址)的恶意热点，利用设备普遍存在的『看到熟悉的WiFi名称就倾向于自动连接』这一行为习惯，诱导受害者的设备连接到攻击者控制的网络——一旦连上，攻击者就掌握了这条网络链路上的中间人位置，能看到甚至篡改所有未加密流量，或者用伪造的登录门户(Captive Portal)页面直接钓取用户凭据。",
+ variants:[
+   {name:"同名热点搭建",t:"twin-ap",desc:"用软件AP工具搭建一个和目标网络SSID相同的开放/伪装热点，配合更强的信号强度或对合法AP发起解除认证攻击，提高受害设备连接到假热点的概率。"},
+   {name:"伪造Captive Portal钓鱼",t:"captive-portal",desc:"连上恶意热点后，跳出一个伪装成『请登录以继续上网』或『企业WiFi门户』的钓鱼页面，直接骗取用户输入的账号密码。"},
+   {name:"设备自动重连机制滥用",t:"auto-reconnect-abuse",desc:"很多设备会记住曾经连过的WiFi名称并在识别到同名信号时自动重连而不做进一步验证，攻击者利用这一点甚至不需要用户主动做任何选择，设备自己就『跳进了陷阱』。"}],
+ detect:"从防御视角：企业环境部署无线入侵检测系统(WIDS)监控异常的同名/相似SSID广播；用户教育角度需要培养『不要在公共/陌生网络输入敏感凭据』的习惯，尤其警惕要求重新登录的弹窗页面。",
+ payloads:[],
+ defend:["企业WiFi优先采用802.1X等能做双向身份验证的认证框架，杜绝仅凭SSID名称判断网络真伪的模式。","部署WIDS监控空口环境里的异常/伪造AP广播。","终端策略上关闭不必要的自动连接已知网络功能，或至少对企业网络强制要求证书验证而非仅凭名称匹配。"]},
+
+{id:"wireless-bluetooth-ble",domain:"无线网络安全",title:"蓝牙 / BLE 安全基础",en:"Bluetooth & BLE Security Fundamentals",sev:"med",
+ summary:"从耳机到智能门锁，蓝牙设备的配对机制五花八门，安全强度参差不齐——有的设备配对时压根没做身份验证，靠近了就能连上。",
+ tags:["BLE","配对嗅探","GATT服务枚举"],
+ intro:"蓝牙(尤其是低功耗蓝牙BLE)广泛用于智能穿戴设备、门锁、传感器等IoT场景。蓝牙的配对(Pairing)机制存在多个安全等级，从完全不设防护(Just Works模式)到需要PIN码/数字比对的更安全模式，很多消费级设备为了配对体验简单，选用了安全性较弱的配对方式。此外BLE设备普遍通过GATT(通用属性配置文件)服务暴露自己的功能接口，如果这些接口没有做好访问控制，可能被直接读写。",
+ variants:[
+   {name:"Just Works 配对模式弱点",t:"just-works",desc:"这种配对模式不做任何身份验证或密钥交换保护，理论上处于通信范围内的攻击者可以在配对过程中进行中间人攻击，窃取或篡改配对后的通信。"},
+   {name:"GATT 服务未授权访问",t:"gatt-unauthorized",desc:"BLE设备通过GATT暴露自己支持的服务与特征值(Characteristic)，如果读写这些特征值没有做身份校验，攻击者可以直接连接目标设备并读取敏感数据或触发未授权操作(如直接给智能门锁发送开锁指令)。"},
+   {name:"设备指纹追踪",t:"tracking",desc:"很多BLE设备的广播包含固定或可预测的标识符，即使不主动连接，仅凭被动监听广播就可能被用来追踪特定设备(及其携带者)的位置轨迹。"}],
+ detect:"用nRF Connect、gatttool等工具扫描目标设备广播的BLE服务，枚举暴露的特征值并测试读写权限；用Wireshark配合蓝牙嗅探硬件分析配对过程使用的安全等级。",
+ payloads:[
+   {l:"BLE服务枚举(gatttool)",c:"gatttool -b &lt;target-mac&gt; --primary   <span class=cmt># 列出设备暴露的所有GATT服务</span>\ngatttool -b &lt;target-mac&gt; --characteristics"}],
+ defend:["涉及敏感操作(开锁、支付)的BLE设备必须使用带身份验证的配对模式，避免Just Works。","GATT特征值的读写操作在应用层增加额外的身份/权限校验，不能假设『蓝牙配对成功』就等于『可信』。","广播包避免携带固定不变的可追踪标识符，定期轮换或使用随机化MAC地址。"]},
+
+{id:"wireless-rfid-nfc",domain:"无线网络安全",title:"RFID / NFC 安全",en:"RFID & NFC Security",sev:"med",
+ summary:"很多门禁卡用的还是几十年前设计的老协议，压根没有加密——拿一个几十块钱的读写设备贴近钱包蹭一下，卡里的数据可能就被原样复制走了。",
+ tags:["门禁卡克隆","Mifare Classic","中继攻击"],
+ intro:"RFID(射频识别)和NFC(近场通信)广泛用于门禁卡、公交卡、非接触支付。安全强度差异极大：老旧的低频门禁卡(如常见的125kHz卡)几乎没有任何加密，读到卡号就能直接克隆；Mifare Classic这类曾经广泛部署的高频卡虽然设计了加密，但其加密算法早已被公开破解，可以在数分钟内被完整读出并克隆；较新的支付级NFC芯片安全性要高得多，但依然存在中继攻击(Relay Attack)这类不需要破解加密、只需要『实时转发』信号的攻击手法。这和本知识库『物理入侵技术』卡片里提到的门禁卡克隆是同一个话题的技术展开。",
+ variants:[
+   {name:"低频卡直接克隆",t:"low-freq-clone",desc:"125kHz等低频门禁卡通常明文传输卡号，用几十元的读写设备贴近目标(如在电梯、咖啡厅近距离接触)即可读取并写入空白卡完成克隆，技术门槛极低。"},
+   {name:"Mifare Classic 加密破解",t:"mifare-crack",desc:"Mifare Classic使用的Crypto-1加密算法已被学术界完整破解，用现成工具能在很短时间内恢复出卡片的加密密钥并完整读出/克隆卡片数据，尽管卡片本身『看起来』是加密保护的。"},
+   {name:"中继攻击(Relay Attack)",t:"relay-attack",desc:"不破解任何加密，用两个设备分别贴近真卡和读卡器，实时转发双方的通信信号，让读卡器以为真卡就在旁边——常被用于攻击支持无感支付/无钥匙进入的高安全性NFC系统，防御这类攻击需要额外的距离检测机制而非仅靠加密强度。"}],
+ detect:"用Proxmark3等专业读写设备识别目标卡片类型与所用协议，判断是否属于已知存在克隆风险的老旧卡片类型。",
+ payloads:[
+   {l:"读取并克隆低频卡(概念,需授权)",c:"<span class=cmt># Proxmark3</span>\nlf search              <span class=cmt># 识别卡片类型</span>\nlf hid clone -r &lt;raw-id&gt;   <span class=cmt># 写入空白卡完成克隆</span>"}],
+ defend:["淘汰无加密的低频门禁卡，迁移到支持挑战-应答机制的现代高安全性卡片。","已知存在算法破解风险的卡片类型(如Mifare Classic)应升级到未被破解的新一代产品。","高安全场景的无感NFC应用增加距离限制/超时机制，缓解中继攻击风险，不能仅依赖加密强度。"]},
 
 /* ============ Web 应用攻击 补充 ============ */
 {id:"web-varoverride",domain:"Web 应用攻击",title:"变量覆盖",en:"Variable Override / Prototype Pollution",sev:"high",
@@ -1907,6 +2145,10 @@ const ROADMAP = [
   cards:["ai-prompt-injection","ai-data-poisoning","ai-adversarial","ai-agentic","ai-model-extraction","ai-rag-poisoning"]},
  {key:"mobile",title:"移动应用安全（可选专精方向）",rationale:"OSCP/OSCP+/OSAI 完全不覆盖这块——PEN-200 的范围是电脑/网络/Web/基础云环境，移动端要的是 Frida、Java/Kotlin 或 ObjC/Swift 逆向、越狱/root环境这一整套不同的技能栈，OffSec 目前也没有对应的专门认证；如果想要一张正式的移动安全证书，业界认可的是 8kSec 的 OMSE(Offensive Mobile Security Expert)。微信小程序/公众号更进一步：连 OWASP 这类国际标准都不覆盖，纯粹是国内市场特有的技术栈，本知识库这两张卡只能对齐国内安全社区自己的方法论。",
   cards:["mobile-static-analysis","mobile-android-ipc","mobile-insecure-storage","mobile-network-pinning","mobile-frida-instrumentation","mobile-ios-jailbreak","wechat-miniprogram","wechat-official-account"]},
+ {key:"cloudnative",title:"云原生与容器安全（可选专精方向）",rationale:"云安全里 AWS 相关的枚举与利用 PEN-200 已经正式纳入课程，是这批新增内容里少数『可能涉及』考试的方向；容器/K8s 安全则完全不在 OSCP 范围内，但本知识库自己的6个实验室全部基于Docker，理解容器逃逸边界对运维和理解这些实验室本身也有直接帮助。",
+  cards:["cloud-iam-privesc","cloud-storage-exposure","cloud-metadata-credential-theft","cloud-serverless","cloud-lateral-persistence","cloud-assessment-tooling","container-docker-escape","container-k8s-rbac","container-image-supplychain"]},
+ {key:"icswireless",title:"工控与无线网络安全（可选专精方向）",rationale:"这两个方向都完全不在 OSCP/OSCP+/OSAI 范围内(OSCP 早年曾有过无线模块，现行课程已不再包含)，业界对应的是 GIAC 的 GICSP(工控)——放进来是为了知识地图的完整性，不代表和主线学习路径有依赖关系，可以随时单独学。",
+  cards:["ics-fundamentals","ics-protocols","ics-plc-hmi","ics-safe-recon","ics-case-stuxnet-industroyer","wireless-wifi-attacks","wireless-evil-twin","wireless-bluetooth-ble","wireless-rfid-nfc"]},
 ];
 
 /* 依赖关系图的几何布局：每个节点是一个 {key,label,cx,cy,cls} 网格坐标，
@@ -1932,6 +2174,8 @@ const RM_NODES = [
  {key:"audit",  label:"代码审计（可选）",  cx:650, cy:600, cls:"support"},
  {key:"persist",label:"后渗透&权限维持（可选）",cx:1150,cy:560, cls:"support"},
  {key:"mobile",label:"移动应用安全（可选）",cx:1450,cy:560, cls:"support"},
+ {key:"cloudnative",label:"云原生与容器安全（可选）",cx:900,cy:560, cls:"support"},
+ {key:"icswireless",label:"工控与无线安全（可选）",cx:1650,cy:560, cls:"support"},
 ];
 const RM_EDGES = [
  {from:"recon",to:"webcore"},{from:"recon",to:"binary"},{from:"recon",to:"client"},
@@ -1945,6 +2189,8 @@ const RM_EDGES = [
  {from:"webadv",to:"audit",dashed:true,label:"进阶：想做到 OSWE"},
  {from:"ad",to:"persist",dashed:true,label:"入侵之后怎么留下来"},
  {from:"labs",to:"mobile",dashed:true,label:"可选，独立技能方向"},
+ {from:"privesc",to:"cloudnative",dashed:true,label:"可选，云/容器方向"},
+ {from:"labs",to:"icswireless",dashed:true,label:"可选，完全独立方向"},
 ];
 const ROADMAP_NOTE = "以上全部学完、掌握率过半之后，去看看侧栏『认证进阶路线图』——四条可选分支(AI安全/社工物理/代码审计/后渗透)同样会影响下一张证书怎么选，根据你的方向（Web 深耕 / 红队 / 漏洞利用开发）决定。";
 
@@ -2054,6 +2300,11 @@ const EXAM_SCOPE = {
  "mobile-static-analysis":"none","mobile-android-ipc":"none","mobile-insecure-storage":"none",
  "mobile-network-pinning":"none","mobile-frida-instrumentation":"none","mobile-ios-jailbreak":"none",
  "wechat-miniprogram":"none","wechat-official-account":"none",
+ "ics-fundamentals":"none","ics-protocols":"none","ics-plc-hmi":"none","ics-safe-recon":"none","ics-case-stuxnet-industroyer":"none",
+ "cloud-iam-privesc":"maybe","cloud-storage-exposure":"maybe","cloud-metadata-credential-theft":"maybe",
+ "cloud-serverless":"maybe","cloud-lateral-persistence":"maybe","cloud-assessment-tooling":"maybe",
+ "container-docker-escape":"none","container-k8s-rbac":"none","container-image-supplychain":"none",
+ "wireless-wifi-attacks":"none","wireless-evil-twin":"none","wireless-bluetooth-ble":"none","wireless-rfid-nfc":"none",
 };
 const EXAM_SCOPE_LABEL = {core:{t:"官方考点",cls:"core"},maybe:{t:"可能涉及",cls:"maybe"},none:{t:"不考·拓展",cls:"none"}};
 
