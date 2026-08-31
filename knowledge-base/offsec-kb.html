@@ -1124,6 +1124,119 @@ const DATA = [
  detect:"都建议先有 OSCP 或同等水平基础；选哪个取决于想往红队(CRTO)、AD 专精(CRTP/CRTE)，还是预算有限但要有认证(PNPT/CPTS)的方向发展。",
  defend:["CRTP/CRTE 和本知识库『活动目录』域直接衔接，做完横向移动/Kerberoasting 卡片后是很自然的下一步。","预算有限的话，PNPT/CPTS 是目前性价比最高的『第二张证』选择。"]},
 
+/* ============ 移动应用安全 ============ */
+{id:"mobile-static-analysis",domain:"移动应用安全",title:"移动应用逆向工程基础",en:"Mobile App Reverse Engineering Fundamentals",sev:"info",
+ summary:"拿到一个 APK 或 IPA 文件，怎么在不运行它的情况下摸清代码结构、找到硬编码密钥和潜在漏洞点——静态分析是移动端安全测试的第一步。",
+ tags:["APK/IPA","jadx","class-dump"],
+ intro:"移动应用的分发形态(APK/IPA)本质是打包好的应用代码+资源，静态分析就是在不运行程序的前提下反编译/反汇编，直接读代码逻辑。Android 应用大多数逻辑用 Java/Kotlin 写成，编译成 Dalvik/ART 字节码，反编译还原度相对较高；iOS 应用多是 Objective-C/Swift 编译成原生机器码，反编译难度更大、更依赖符号信息是否被保留。两端工具链完全不同，但目标一致：找硬编码密钥、不安全的逻辑判断、可被利用的导出组件/接口。",
+ variants:[
+   {name:"Android APK 反编译",t:"Android",desc:"apktool 反编译资源文件与 smali 字节码，jadx 直接反编译出可读的 Java 伪代码，是审计 Android 应用逻辑最常用的组合。"},
+   {name:"iOS IPA 静态分析",t:"iOS",desc:"class-dump/class-dump-z 提取 Objective-C 的类/方法签名，Hopper 或 Ghidra 做反汇编分析；Swift 编译产物符号信息通常更少，逆向难度更高。"},
+   {name:"AndroidManifest.xml / Info.plist 审查",t:"manifest",desc:"两端都有一份声明应用权限、组件、入口的清单文件，是静态分析的起点——能看出这个应用申请了哪些危险权限、暴露了哪些组件。"}],
+ detect:"先审查清单文件摸清攻击面(权限、导出组件)，再反编译核心业务代码搜索硬编码密钥/URL/后门逻辑关键词，最后结合动态分析验证静态阶段的猜测。",
+ payloads:[
+   {l:"Android 反编译",c:"apktool d target.apk -o out/          <span class=cmt># 反编译资源+smali</span>\njadx -d src/ target.apk                <span class=cmt># 反编译出可读Java伪代码</span>"},
+   {l:"iOS 类信息提取",c:"class-dump -H target_binary -o headers/   <span class=cmt># 导出 Objective-C 类/方法头文件</span>"}],
+ defend:["生产包对关键逻辑做代码混淆(ProGuard/R8 for Android，商业混淆方案 for iOS)，提高逆向成本。","绝不在客户端代码里硬编码密钥/密码，敏感逻辑放服务端。","关键校验逻辑(如支付、授权判断)避免完全依赖客户端可篡改的代码。"]},
+
+{id:"mobile-android-ipc",domain:"移动应用安全",title:"Android 组件安全 (IPC 漏洞)",en:"Android Inter-Process Communication (IPC) Vulnerabilities",sev:"high",
+ summary:"Activity、Service、BroadcastReceiver、ContentProvider 只要标了 exported，就可能被手机上任何其他 App 直接调用——权限校验一旦漏做，等于给全设备开了后门。",
+ tags:["exported组件","Intent劫持","ContentProvider"],
+ intro:"Android 四大组件(Activity/Service/BroadcastReceiver/ContentProvider)可以在 AndroidManifest.xml 里声明为 exported，允许被其他应用调用——这是系统设计好的跨应用协作机制，但如果开发者忘了对调用方做权限校验，任何安装在同一台设备上的恶意应用都能直接触发这些组件，越权执行敏感操作或读取数据。",
+ variants:[
+   {name:"导出 Activity 越权",t:"exported-activity",desc:"未做权限校验的 exported Activity 可被其他应用的 Intent 直接拉起，绕过正常的登录态检查(如直接跳转到本该登录后才能看到的页面)。"},
+   {name:"ContentProvider 数据泄露/注入",t:"content-provider",desc:"exported 的 ContentProvider 如果对外暴露了查询接口且未做参数校验，可能被越权读取整个数据库，甚至存在类似SQL注入的拼接漏洞。"},
+   {name:"隐式 Intent 劫持",t:"intent-hijack",desc:"应用发送隐式Intent(不指定明确目标包名)时，如果恶意应用注册了能匹配的 intent-filter，可能抢先接收到本该发给正规组件的敏感数据。"},
+   {name:"BroadcastReceiver 滥用",t:"broadcast",desc:"exported 的广播接收器如果处理逻辑有副作用(如触发扣费、切换权限状态)且未校验发送方，任何应用发一条广播就能触发。"}],
+ detect:"用 apktool/jadx 反编译后检索 AndroidManifest.xml 里所有 android:exported=\"true\" 的组件，配合 adb 手工构造 Intent 逐个验证是否有效执行了敏感操作、是否做了调用方校验。",
+ payloads:[
+   {l:"手工调用导出Activity(adb)",c:"adb shell am start -n com.target.app/.SecretActivity   <span class=cmt># 绕过正常入口直接拉起</span>"},
+   {l:"查询暴露的ContentProvider",c:"adb shell content query --uri content://com.target.app.provider/users"}],
+ defend:["不需要跨应用调用的组件一律不设为 exported，或显式声明自定义权限并要求 signature 级别保护。","exported 组件内部依然要做调用方身份/权限校验，不能假设『反正设成了非导出就安全』。","隐式Intent发送敏感数据前用 setPackage()/setComponent() 明确指定接收方，避免被劫持。"]},
+
+{id:"mobile-insecure-storage",domain:"移动应用安全",title:"移动端不安全数据存储",en:"Insecure Data Storage (Android & iOS)",sev:"high",
+ summary:"手机丢了/被 root 越狱了，App 本地存的东西是不是就等于直接泄露？——Token、密码、聊天记录如果明文躺在本地文件里，答案是肯定的。",
+ tags:["OWASP MASVS-STORAGE","Keychain","SharedPreferences"],
+ intro:"移动应用经常需要在本地缓存数据(登录态、用户信息、缓存内容)以提升体验，但很多开发者把『本地存储』和『安全』画了等号，忽视了在已 root/越狱的设备上，或者设备丢失/被物理接触时，本地文件本质对攻击者透明可读。Android 和 iOS 都提供了官方推荐的安全存储机制，但如果开发者图省事直接用明文存储 API，同样的风险两端都存在。",
+ variants:[
+   {name:"Android 明文存储",t:"android",desc:"SharedPreferences 默认明文 XML 存储、SQLite 数据库默认不加密、外部存储(/sdcard)世界可读——这三处是 Android 应用最常见的敏感信息泄露点。"},
+   {name:"iOS 明文/弱存储",t:"ios",desc:"NSUserDefaults 本质是明文 plist 文件；Keychain 虽然设计上更安全，但如果 Access Control 设置不当(如设成 kSecAttrAccessibleAlways)，越狱设备上依然可被读取。"},
+   {name:"日志泄露",t:"logging",desc:"两端都常见把敏感信息(token、密码、接口全量返回)直接打进调试日志，生产包忘记关闭，root/越狱设备上任何应用都能读取系统日志。"}],
+ detect:"在已 root/越狱的测试设备上，直接翻应用的私有数据目录(Android: /data/data/包名/，iOS: 应用沙盒目录)，检查配置文件、数据库、日志里是否有明文敏感信息；配合 objection 之类工具快速导出整个数据目录。",
+ payloads:[
+   {l:"Android 私有目录导出(需root)",c:"adb shell run-as com.target.app tar cf - . | tar xf - -C ./dumped/"},
+   {l:"objection 一键导出应用数据",c:"objection -g com.target.app explore\n> android hooking generate simple ...\n> file download &lt;path&gt;"}],
+ defend:["敏感数据必须用平台官方安全存储机制：Android 的 EncryptedSharedPreferences/Keystore，iOS 的 Keychain(合理设置 Access Control)。","生产构建关闭调试日志，或对日志内容做敏感字段过滤。","能不落盘就不落盘——尤其是密码原文、完整支付信息，用完即焚而不是缓存。"]},
+
+{id:"mobile-network-pinning",domain:"移动应用安全",title:"移动端网络通信安全 & 证书锁定绕过",en:"Mobile Network Security & Certificate Pinning Bypass",sev:"high",
+ summary:"想用 Burp 抓个移动 App 的包，却发现装了代理证书也抓不到明文——十有八九是遇上了证书锁定，这是移动端测试和 Web 端最大的流程差异。",
+ tags:["Certificate Pinning","MITM","Frida"],
+ intro:"移动应用测试的标准流程是把手机/模拟器的网络流量代理到 Burp/mitmproxy 抓包分析，但很多 App 为了防中间人攻击实现了证书锁定(Certificate/SSL Pinning)——App 内置了服务端证书或公钥的指纹，即使客户端信任了你装的代理根证书，App 自己也会额外校验证书指纹，指纹不对就直接拒绝连接。这是移动端测试和常规 Web 测试最大的流程差异，绕不过这一步，后面所有分析都无从下手。",
+ variants:[
+   {name:"证书锁定的实现方式",t:"pinning-impl",desc:"可能锁定在应用代码里(如 OkHttp 的 CertificatePinner)，也可能锁定在原生库/证书文件里，实现方式不同，绕过手法也不同。"},
+   {name:"Frida 运行时绕过",t:"frida-bypass",desc:"用 Frida 挂钩证书校验相关的方法(如 Android 的 X509TrustManager、iOS 的 SSL 校验函数)，运行时把校验结果强制改成『通过』，是目前最通用的绕过手段，社区维护了大量现成脚本(如 objection 的 sslpinning disable)。"},
+   {name:"静态修补绕过",t:"patch-bypass",desc:"直接反编译修改证书校验相关代码逻辑，重新打包签名安装——不需要 root/越狱环境实时挂钩，但每次应用更新都要重新做一遍。"}],
+ detect:"先按常规方式配置代理+装根证书，如果依然抓不到明文流量或应用直接报错/闪退，基本可以判断存在证书锁定，下一步就是找绕过手法而不是重复检查代理配置。",
+ payloads:[
+   {l:"objection 一键禁用证书锁定",c:"objection -g com.target.app explore\n> android sslpinning disable   <span class=cmt># Android，iOS 用 ios sslpinning disable</span>"}],
+ defend:["证书锁定本身是有效的防御手段，但要清楚它只防外部中间人，不防已 root/越狱设备上的运行时挂钩——不能把它当成唯一的安全边界。","关键接口即使突破了证书锁定，也应在应用层再做一层签名/加密校验，提高单纯绕过锁定后的可利用性门槛。"]},
+
+{id:"mobile-frida-instrumentation",domain:"移动应用安全",title:"Frida 动态插桩实战",en:"Dynamic Instrumentation with Frida",sev:"high",
+ summary:"不用改一行 APK/IPA 里的代码，运行时直接往目标进程里注入 JS 脚本，想 hook 哪个函数、想改哪个返回值，现改现生效——这是移动端测试里最接近『开挂』的技术。",
+ tags:["Frida","Hook","Root检测绕过"],
+ intro:"Frida 是一个跨平台的动态插桩框架，核心能力是把 JavaScript 脚本注入到目标进程里，在运行时挂钩(hook)任意函数——调用前后都能拦截，可以读写参数、篡改返回值、甚至完全替换函数逻辑。相比静态修改代码重新打包，Frida 的优势是即改即生效、不需要重新签名安装，是移动端渗透测试里绕过本地校验逻辑(root检测、越狱检测、证书锁定、反调试)的核心工具。",
+ variants:[
+   {name:"Root/越狱检测绕过",t:"anti-root-bypass",desc:"很多App会检测设备是否root/越狱来拒绝运行，用Frida挂钩检测逻辑相关的函数(文件是否存在检查、特定命令执行结果等)强制返回『设备干净』。"},
+   {name:"关键业务逻辑挂钩",t:"logic-hook",desc:"挂钩本地做的关键判断(如『是否为VIP』『余额是否充足』)，观察或篡改这些判断结果，用来测试客户端逻辑是否被过度信任而服务端未做二次校验。"},
+   {name:"参数/返回值动态查看",t:"introspection",desc:"不修改任何行为，纯粹挂钩感兴趣的函数打印调用参数和返回值，是逆向未知加密/签名算法实现细节时效率最高的手段之一。"}],
+ detect:"确认测试设备已 root/越狱且能正常附加 Frida server；先用 frida-trace 之类工具快速摸清目标关注的类/函数，再针对性编写 hook 脚本深入分析。",
+ payloads:[
+   {l:"Hook Java 方法并打印参数(Android，概念)",c:"Java.perform(function(){\n  var cls = Java.use('com.target.app.SecurityCheck');\n  cls.isDeviceRooted.implementation = function(){\n    console.log('root check called, forcing false');\n    return false;   <span class=cmt># 强制返回'未root'</span>\n  };\n});"}],
+ defend:["单纯的本地检测逻辑(root检测、反调试)在有经验的测试者面前形同虚设，不能作为安全边界，只能作为增加攻击成本的辅助手段。","关键安全判断必须放在服务端，客户端本地的任何判断结果都要假设可以被 Frida 类工具篡改。","可以考虑运行时自校验/反Frida检测作为纵深防御的一层，但同样要清楚这只是提高门槛而非彻底杜绝。"]},
+
+{id:"mobile-ios-jailbreak",domain:"移动应用安全",title:"iOS 越狱环境 & 平台特有风险",en:"iOS Jailbreak Environment & Platform-Specific Risks",sev:"med",
+ summary:"iOS 的沙盒和签名机制本来就比 Android 更封闭，测试 iOS App 前先得『越狱』才能拿到分析所需的系统权限——这也让 iOS 端的测试门槛和 Android 有明显差异。",
+ tags:["Jailbreak","Sandbox","URL Scheme"],
+ intro:"iOS 系统层面的沙盒隔离和代码签名机制比 Android 更严格，未越狱设备上很多分析动作(如附加Frida、导出应用沙盒数据、绕过应用签名安装未签名的分析工具)都做不了，因此『先越狱测试机』几乎是 iOS 应用安全测试的必要前置步骤。除了越狱本身，iOS 还有一些和 Android 概念不同的平台特有攻击面。",
+ variants:[
+   {name:"URL Scheme / Universal Link 劫持",t:"url-scheme",desc:"iOS 应用间跳转常通过自定义 URL Scheme(如 myapp://) 或 Universal Link 实现，如果应用对接收到的跳转参数不加校验就执行敏感操作，恶意页面/应用能构造链接触发。"},
+   {name:"越狱检测绕过",t:"jailbreak-detection",desc:"App 常见的越狱检测手段(检查Cydia是否存在、检查特定系统文件、检查沙盒完整性)，同样可以用 Frida 挂钩绕过，思路和 Android 的root检测绕过一致。"},
+   {name:"钥匙串(Keychain)残留",t:"keychain-persistence",desc:"iOS 的 Keychain 数据在应用卸载后默认不会被清除，如果测试机换手转卖前只是简单删除App而未清除Keychain，可能残留前一个用户的敏感凭据。"}],
+ detect:"在越狱测试机上用 Frida/objection 附加目标进程做前述各类分析；针对 URL Scheme，枚举应用 Info.plist 里声明的所有 scheme，逐个构造参数测试是否存在未校验的敏感跳转。",
+ payloads:[
+   {l:"枚举App注册的URL Scheme(从Info.plist)",c:"plutil -p Info.plist | grep -A3 CFBundleURLSchemes"},
+   {l:"手工测试URL Scheme跳转(模拟器)",c:"xcrun simctl openurl booted \"myapp://reset-password?token=x\""}],
+ defend:["处理 URL Scheme/Universal Link 传入参数时，按『不可信外部输入』对待，做严格校验，敏感操作(改密、支付)不应仅凭一个跳转链接触发。","应用卸载时主动清理自己写入 Keychain 的数据，不依赖系统默认行为。","越狱检测同样只作为纵深防御一层，核心安全逻辑要放服务端。"]},
+
+/* ============ 微信生态安全 ============ */
+{id:"wechat-miniprogram",domain:"微信生态安全",title:"微信小程序安全",en:"WeChat Mini Program Security",sev:"high",
+ summary:"小程序看着像个轻量网页，本质是跑在微信这个『超级App』沙盒里的一整套代码包——反编译拿到源码的门槛比原生App低得多，云函数配置不当更是国内特有的高发漏洞类型。",
+ tags:["wxapkg","云函数","国内特有生态"],
+ intro:"微信小程序是完全独立于 Web/原生App 之外的第三套技术栈：用 WXML/WXSS/JS 编写，运行在微信客户端内置的双线程(逻辑层+渲染层)沙盒环境里，最终以 .wxapkg 包的形式分发。这套生态是中国市场特有的技术栈，国际安全标准(包括OWASP)没有专门覆盖，测试方法论基本靠国内安全社区自己摸索总结。相比原生 App，小程序反编译门槛更低(.wxapkg 本质是打包的前端代码，社区工具能较完整地还原源码)，而后端常用的云开发/云函数模式又引入了一类国内特有的高发漏洞。",
+ variants:[
+   {name:"wxapkg 反编译",t:"decompile",desc:"小程序包本质是打包过的 JS/WXML/WXSS，用社区工具基本能完整还原出接近原始的前端源码，审计门槛远低于原生 App 逆向。"},
+   {name:"云函数/云开发未授权访问",t:"cloud-function",desc:"微信云开发模式下，云函数/云数据库如果权限规则配置不当(默认权限过于宽松，或前端直接暴露了数据库读写能力)，可能造成整表数据未授权读取甚至篡改，是小程序生态里最高发的漏洞类型之一。"},
+   {name:"AppID/AppSecret 泄露",t:"secret-leak",desc:"反编译出的前端代码或配置文件里，偶尔能直接翻出后端接口的密钥/AppSecret，一旦泄露攻击者能直接调用微信开放接口获取用户敏感信息或以小程序身份执行操作。"},
+   {name:"支付/业务逻辑漏洞",t:"business-logic",desc:"和普通 Web/App 一样存在价格篡改、越权查看他人订单等业务逻辑问题，小程序场景下常见于砍价/拼团/优惠券这类营销功能。"}],
+ detect:"反编译 wxapkg 包审计前端逻辑和硬编码信息；针对云开发类小程序，重点检查云函数的权限配置与云数据库的访问规则是否过于宽松；常规 Web 越权/逻辑漏洞的测试思路同样适用于小程序的后端接口。",
+ payloads:[
+   {l:"提取本地缓存的wxapkg(需root手机或抓包提取)",c:"<span class=cmt># wxapkg 通常缓存在微信数据目录下，也可在抓包时从下载响应里直接截获</span>\nunveilr wxapkg 目标包.wxapkg   <span class=cmt># 社区工具反编译还原源码</span>"}],
+ defend:["云函数/云数据库权限规则遵循最小权限原则，绝不使用默认的宽松权限。","AppSecret 等密钥只能留在服务端，绝不能出现在小程序前端代码或配置里。","小程序后端接口按标准 Web API 的安全要求做鉴权和越权校验，不能因为『是小程序生态』就降低标准。"]},
+
+{id:"wechat-official-account",domain:"微信生态安全",title:"微信公众号安全",en:"WeChat Official Account Security",sev:"med",
+ summary:"公众号的网页授权、自定义菜单、客服消息背后都是一套基于 AppID/AppSecret 的服务端接口体系，密钥管理和签名校验做得好不好，直接决定这套体系是不是形同虚设。",
+ tags:["网页授权","AccessToken","第三方平台"],
+ intro:"微信公众号本身更接近一套『服务端能力』而非一个独立客户端应用：公众号后台通过 AppID/AppSecret 调用微信开放接口(发消息、查用户信息)，H5 页面通过网页授权(OAuth2风格)拿到用户身份，用户消息通过配置好签名校验的 URL 推送给公众号服务器处理。这条链路上每一环都有对应的、国内特有的常见配置失误。",
+ variants:[
+   {name:"网页授权(OAuth2风格)配置不当",t:"web-oauth",desc:"公众号H5页面用于获取用户身份的网页授权流程，如果 redirect_uri 校验不严或 state 参数被忽略，存在被劫持授权、窃取用户身份的风险，本质和标准 OAuth2 的常见漏洞同源。"},
+   {name:"AccessToken/AppSecret 泄露",t:"token-leak",desc:"AccessToken 是调用几乎所有公众号高权限接口的凭证，如果因为代码仓库泄露、日志打印等原因流出，攻击者能直接以公众号身份群发消息、读取用户信息。"},
+   {name:"消息接口签名校验缺失",t:"signature-bypass",desc:"公众号被动接收用户消息的URL如果没有正确校验微信服务器的签名(Token+EncodingAESKey机制)，理论上任何人都能伪造消息推送给这个处理接口。"},
+   {name:"第三方平台代授权风险",t:"third-party-auth",desc:"通过第三方平台帮众多公众号做代运营时，一旦第三方平台自身被攻破，攻陷范围会从一个公众号扩散到所有被代授权的公众号，是供应链风险在这个生态里的具体体现。"}],
+ detect:"审查网页授权流程的 redirect_uri/state 参数校验是否严格；检查代码仓库/日志是否曾经泄露过 AppSecret/AccessToken；测试消息接收接口对签名的校验是否正确实现。",
+ payloads:[
+   {l:"网页授权URL结构(用于分析redirect_uri校验)",c:"https://open.weixin.qq.com/connect/oauth2/authorize?appid=APPID&redirect_uri=REDIRECT&response_type=code&scope=snsapi_userinfo&state=STATE"}],
+ defend:["AppSecret/AccessToken 只能存于服务端，AccessToken 建议做中心化缓存管理避免频繁请求触发风控，绝不下发到前端。","网页授权严格校验 redirect_uri 白名单与 state 参数，防止授权劫持。","消息接收接口严格按官方文档实现 Token+签名校验，拒绝未通过校验的请求。","接入第三方代运营平台前评估其安全资质，明确供应链风险边界。"]},
+
 /* ============ Web 应用攻击 补充 ============ */
 {id:"web-varoverride",domain:"Web 应用攻击",title:"变量覆盖",en:"Variable Override / Prototype Pollution",sev:"high",
  summary:"用户输入直接覆盖了程序已有的变量，绕过鉴权逻辑或篡改程序行为——PHP 的 extract() 和 JS 的原型链污染是两个最经典的变种。",
@@ -1792,6 +1905,8 @@ const ROADMAP = [
   cards:["persist-windows","persist-linux","persist-ad-tickets","persist-cleanup"]},
  {key:"ai",title:"AI 安全（可选专精方向）",rationale:"如果目标包含 OSAI，这是新兴且增长最快的方向；提示词注入是目前最『考试友好』(靠对话交互即可复现)的一项，其余几张更偏原理与红队视角——即使不直接考，理解 LLM/Agent 应用的攻击面也已经是现代安全从业者的必修课。",
   cards:["ai-prompt-injection","ai-data-poisoning","ai-adversarial","ai-agentic","ai-model-extraction","ai-rag-poisoning"]},
+ {key:"mobile",title:"移动应用安全（可选专精方向）",rationale:"OSCP/OSCP+/OSAI 完全不覆盖这块——PEN-200 的范围是电脑/网络/Web/基础云环境，移动端要的是 Frida、Java/Kotlin 或 ObjC/Swift 逆向、越狱/root环境这一整套不同的技能栈，OffSec 目前也没有对应的专门认证；如果想要一张正式的移动安全证书，业界认可的是 8kSec 的 OMSE(Offensive Mobile Security Expert)。微信小程序/公众号更进一步：连 OWASP 这类国际标准都不覆盖，纯粹是国内市场特有的技术栈，本知识库这两张卡只能对齐国内安全社区自己的方法论。",
+  cards:["mobile-static-analysis","mobile-android-ipc","mobile-insecure-storage","mobile-network-pinning","mobile-frida-instrumentation","mobile-ios-jailbreak","wechat-miniprogram","wechat-official-account"]},
 ];
 
 /* 依赖关系图的几何布局：每个节点是一个 {key,label,cx,cy,cls} 网格坐标，
@@ -1816,6 +1931,7 @@ const RM_NODES = [
  {key:"se",     label:"社工&物理安全（可选）",cx:85, cy:660, cls:"support"},
  {key:"audit",  label:"代码审计（可选）",  cx:650, cy:600, cls:"support"},
  {key:"persist",label:"后渗透&权限维持（可选）",cx:1150,cy:560, cls:"support"},
+ {key:"mobile",label:"移动应用安全（可选）",cx:1450,cy:560, cls:"support"},
 ];
 const RM_EDGES = [
  {from:"recon",to:"webcore"},{from:"recon",to:"binary"},{from:"recon",to:"client"},
@@ -1828,6 +1944,7 @@ const RM_EDGES = [
  {from:"recon",to:"se",dashed:true,label:"可选，攻击面不止技术"},
  {from:"webadv",to:"audit",dashed:true,label:"进阶：想做到 OSWE"},
  {from:"ad",to:"persist",dashed:true,label:"入侵之后怎么留下来"},
+ {from:"labs",to:"mobile",dashed:true,label:"可选，独立技能方向"},
 ];
 const ROADMAP_NOTE = "以上全部学完、掌握率过半之后，去看看侧栏『认证进阶路线图』——四条可选分支(AI安全/社工物理/代码审计/后渗透)同样会影响下一张证书怎么选，根据你的方向（Web 深耕 / 红队 / 漏洞利用开发）决定。";
 
@@ -1934,6 +2051,9 @@ const EXAM_SCOPE = {
  "case-zerologon":"maybe","case-printnightmare":"maybe","case-dirtycow":"maybe","case-pwnkit":"maybe",
  "case-struts2":"maybe","case-log4shell":"maybe","case-fastjson-autotype":"maybe","case-cc-gadget-chain":"maybe","case-shiro550":"maybe","case-bluekeep":"maybe",
  "case-gotofail":"none","case-solarwinds":"none","case-xzbackdoor":"none","case-moveit":"none",
+ "mobile-static-analysis":"none","mobile-android-ipc":"none","mobile-insecure-storage":"none",
+ "mobile-network-pinning":"none","mobile-frida-instrumentation":"none","mobile-ios-jailbreak":"none",
+ "wechat-miniprogram":"none","wechat-official-account":"none",
 };
 const EXAM_SCOPE_LABEL = {core:{t:"官方考点",cls:"core"},maybe:{t:"可能涉及",cls:"maybe"},none:{t:"不考·拓展",cls:"none"}};
 
