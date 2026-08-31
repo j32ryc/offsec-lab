@@ -19,6 +19,10 @@
 **/shiro-payload.bin
 **/cookie.txt
 
+# vulhub-fetch: generated locally, not part of the repo
+vulhub-fetch/downloaded/
+vulhub-fetch/.tree_cache.json
+
 # OS junk
 .DS_Store
 Thumbs.db

