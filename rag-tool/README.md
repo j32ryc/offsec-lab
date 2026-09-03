@@ -1,9 +1,9 @@
 # RAG tool
 
-Local, terminal-based Q&A over the knowledge base's 30 cards. Retrieval is
+Local, terminal-based Q&A over the knowledge base's ~100 cards. Retrieval is
 plain weighted keyword scoring (see `rag.py`) — deliberately not
-embeddings/a vector DB, since exhaustively scoring 30 documents is both
-fast and about as accurate as one at this corpus size. Generation calls
+embeddings/a vector DB, since exhaustively scoring a corpus this size is both
+fast and about as accurate as one would be at this scale. Generation calls
 DeepSeek's chat completions API (OpenAI-compatible).
 
 ## Setup

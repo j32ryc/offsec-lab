@@ -23,6 +23,9 @@
 vulhub-fetch/downloaded/
 vulhub-fetch/.tree_cache.json
 
+# rag-tool: corpus.json is regenerated from the HTML by extract_corpus.js
+rag-tool/corpus.json
+
 # OS junk
 .DS_Store
 Thumbs.db

@@ -7,8 +7,12 @@ const htmlPath = path.join(__dirname, '..', 'knowledge-base', 'offsec-kb.html');
 const html = fs.readFileSync(htmlPath, 'utf8');
 
 const startMarker = 'const DATA = [';
-const start = html.indexOf(startMarker) + 'const DATA = '.length;
-if (start < 0) throw new Error('could not find DATA array in offsec-kb.html');
+const markerIdx = html.indexOf(startMarker);
+// Guard on the raw indexOf result: adding the prefix length first would turn a
+// "not found" (-1) into a positive offset, so the check never fired and the
+// walker below would extract garbage from the top of the file instead.
+if (markerIdx < 0) throw new Error('could not find DATA array in offsec-kb.html');
+const start = markerIdx + 'const DATA = '.length;
 
 // walk forward from the opening [ to find the matching closing ] (brace-depth aware,
 // since payload code blocks contain arbitrary characters including brackets/quotes)

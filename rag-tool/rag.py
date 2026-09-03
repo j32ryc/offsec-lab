@@ -3,7 +3,7 @@
 Local RAG assistant over the OffSec knowledge base.
 
 Retrieval is deliberately simple (weighted keyword/substring scoring, no
-embeddings or vector DB) -- the corpus is 30 cards, so exhaustive scoring
+embeddings or vector DB) -- the corpus is ~100 cards, so exhaustive scoring
 over all of them is both fast and, at this scale, about as accurate as an
 embedding-based retriever would be. Generation calls DeepSeek's
 OpenAI-compatible chat completions API.

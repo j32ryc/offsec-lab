@@ -81,7 +81,7 @@ own machine.
 ## RAG assistant (optional)
 
 `rag-tool/` is a small local script that answers questions grounded in
-the knowledge base's 30 cards, using simple keyword retrieval (no vector
+the knowledge base's ~100 cards, using simple keyword retrieval (no vector
 DB needed at this corpus size) + the DeepSeek API for generation. Needs
 your own `DEEPSEEK_API_KEY` — copy `rag-tool/.env.example` to
 `rag-tool/.env` and fill it in. See `rag-tool/README.md`.
